@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>Aether Quant Studio · 苍穹量枢 — 币安合约智能量化终端</title>
+  <link rel="icon" href="/static/icons/tray_running.ico">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/01-base-and-tokens.css">
+  <link rel="stylesheet" href="/static/css/02-layout-and-header.css">
+  <link rel="stylesheet" href="/static/css/03-chart-and-panels.css">
+  <link rel="stylesheet" href="/static/css/04-modals-and-obsidian.css">
+  <link rel="stylesheet" href="/static/css/05-theme-light-and-safety.css">
+  <link rel="stylesheet" href="/static/css/06-aether-ui-polish.css">
+</head>
+<body>
+<script>try{if(localStorage.getItem('quant_theme')==='light'){document.body.classList.add('theme-light');document.documentElement.style.colorScheme='light';}else{document.documentElement.style.colorScheme='dark';}}catch(_){}</script>
+<div class="header">
+  <div class="header-left">
+    <div class="logo"><span class="logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 12 12 22 2 12"></polygon><circle cx="12" cy="12" r="3"></circle></svg></span>AETHER<span>QUANT</span><span class="logo-badge">STUDIO</span></div>
+    <div class="conn-status"><span class="conn-dot" id="ws-dot"></span><span id="ws-text">连接中...</span></div>
+    <div class="trading-mode-capsule workspace-mode" id="trading-mode-capsule" onclick="toggleTradingModeMenu(event)" title="点击切换交易分级模式 (只读 / 影子 / 模拟 / 小微 / 全额实盘)">
+      <span class="mode-dot"></span>
+      <span class="mode-label" id="trading-mode-label">只读预览 (READONLY)</span>
+      <span style="font-size:8px;opacity:0.7">▾</span>
+      <div class="mode-dropdown-menu" id="mode-dropdown-menu" style="display:none">
+        <div class="mode-opt" onclick="selectTradingMode('READONLY', event)">👁️ 只读预览 (READONLY)</div>
+        <div class="mode-opt" onclick="selectTradingMode('SHADOW', event)">👤 影子观察 (SHADOW)</div>
+        <div class="mode-opt" onclick="selectTradingMode('PAPER', event)">📝 模拟实盘 (PAPER)</div>
+        <div class="mode-opt" onclick="selectTradingMode('MICRO_LIVE', event)">⚡ 小微实盘 (MICRO_LIVE)</div>
+        <div class="mode-opt" onclick="selectTradingMode('LIVE', event)">🔥 全额实盘 (LIVE)</div>
+      </div>
+    </div>
+    <span class="workspace-mode" style="font-size:11px;color:var(--text-2);padding:3px 8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px" id="htf-label">高周期: --</span>
+  </div>
+
+  <!-- 正中风控控制中枢胶囊 (急停 + 熔断 + Jev风控 + 自动交易) -->
+  <div class="header-center">
+    <div class="control-capsule">
+      <!-- 常驻紧急急停按钮 (Emergency Kill Switch) -->
+      <button type="button" class="emergency-kill-badge" id="emergency-kill-badge" onclick="onEmergencyKillClick()" title="一键紧急急停 (Kill Switch): 瞬间关闭自动交易、并发撤单、可选市价全平">
+        🚨 <span id="emergency-kill-text">紧急急停</span>
+      </button>
+
+      <!-- 实时熔断与对账指示器 -->
+      <div class="circuit-breaker-badge safe" id="circuit-breaker-badge" onclick="openReconciliationModal()" title="执行层通讯与数据熔断器监控 · 点击查看对账与熔断详情">
+        <span class="cb-pulse-dot"></span>
+        <span id="circuit-breaker-text">熔断: 安全</span>
+      </div>
+
+      <div class="auto-badge off" id="typesafe-badge" onclick="toggleTypeSafeQuick()" title="点击快捷切换 TypeSafe Jev 决策审查模式">🧠 Jev 风控: 关</div>
+      <div class="auto-badge off" id="auto-badge" onclick="toggleAuto()" title="点击快捷开启/关闭实盘量化自动交易">自动交易: 关</div>
+    </div>
+    <span id="grid-badge" style="display:none;font-size:11px;color:#f0b90b;margin-left:6px;cursor:default"></span>
+  </div>
+
+  <div class="header-right">
+    <button type="button" class="cmd-trigger-btn" id="cmd-palette-trigger" onclick="openCommandPalette()" title="全局快捷指令与合约秒切 (快捷键: Ctrl+K 或 ?)"><span>🔍 快捷指令</span><kbd class="cmd-trigger-kbd">Ctrl K</kbd></button>
+    <button class="obsidian-btn" id="obsidian-btn" type="button" onclick="openObsidianHub()" title="Obsidian 知识库策略与习惯追踪">
+      <span class="obsidian-dot" id="obsidian-dot"></span> 📓 知识库
+    </button>
+    <button class="obsidian-btn" id="evo-quick-btn" type="button" onclick="openObsidianHub('evolution')" title="备选策略历史回测与自动改进工作台" style="background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(37,99,235,.18));border-color:rgba(139,92,246,.4);color:#c084fc">
+      ⚡ 策略自进化
+    </button>
+    <div class="reports-hub-dropdown">
+      <button class="reports-hub-btn" id="reports-hub-btn" type="button" onclick="toggleReportsDropdown(event)" title="每日报告、图表与博客工作室">
+        📑 复盘与研报 <span style="font-size:10px">▾</span>
+      </button>
+      <div class="reports-dropdown-menu" id="reports-dropdown-menu" style="display:none">
+        <div class="rep-menu-item" onclick="openObsidianHub('evolution'); closeReportsDropdown();">
+          <span class="rep-icon">🧪</span>
+          <div class="rep-text">
+            <strong style="color:#c084fc">策略自进化与回测</strong>
+            <small>历史数据模拟跑批与AI自动改进</small>
+          </div>
+        </div>
+        <div class="rep-menu-item" onclick="showDailyReport(); closeReportsDropdown();">
+          <span class="rep-icon">📊</span>
+          <div class="rep-text">
+            <strong>每日交易报告</strong>
+            <small>今日实盘战报与盈亏胜率</small>
+          </div>
+        </div>
+        <div class="rep-menu-item" onclick="window.open('/api/export_trades_html','_blank'); closeReportsDropdown();">
+          <span class="rep-icon">🌐</span>
+          <div class="rep-text">
+            <strong>交互式 HTML 图表</strong>
+            <small>全景K线买卖点与大盘意图</small>
+          </div>
+        </div>
+        <div class="rep-menu-item" onclick="window.open('/api/export_trades_md','_blank'); closeReportsDropdown();">
+          <span class="rep-icon">📝</span>
+          <div class="rep-text">
+            <strong>Markdown 每日总结</strong>
+            <small>交易反思与结构化文本日记</small>
+          </div>
+        </div>
+        <div class="rep-menu-divider"></div>
+        <div class="rep-menu-item" onclick="syncCurrentTradesToObsidian(); closeReportsDropdown();">
+          <span class="rep-icon">📓</span>
+          <div class="rep-text">
+            <strong style="color:#a78bfa">同步至 Obsidian 知识库</strong>
+            <small>自动归档复盘与五维习惯评分</small>
+          </div>
+        </div>
+        <div class="rep-menu-item" onclick="generateBlog(); closeReportsDropdown();">
+          <span class="rep-icon">✍️</span>
+          <div class="rep-text">
+            <strong style="color:#f0b90b">币安广场博客工作室</strong>
+            <small>生成1280x720封面并直发广场</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 无障碍色彩切换开关 -->
+    <button class="a11y-color-btn" id="btn-toggle-a11y" type="button" onclick="toggleColorBlindMode()" title="切换 红绿 / 蓝橙 (a11y 色弱友好配色)">
+      <span id="a11y-color-indicator" style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block"></span>
+      <span id="a11y-color-text">红绿</span>
+    </button>
+    <div class="locale-switch" aria-label="Language">
+      <button class="locale-btn active" data-locale="zh-CN" onclick="setLanguage('zh-CN')">中</button>
+      <button class="locale-btn" data-locale="en-US" onclick="setLanguage('en-US')">EN</button>
+    </div>
+    <div class="header-theme-wrap" title="界面配色风格切换">
+      <button class="theme-quick-btn" id="theme-quick-btn" onclick="toggleThemeLightDark()" title="一键切换白天/暗黑模式">
+        <span id="header-theme-icon">☀️</span>
+        <span id="header-theme-text" data-i18n="themeLight">白色简约</span>
+      </button>
+      <div class="theme-switcher header-palette" data-i18n-title="themePalette" title="界面配色">
+        <button class="theme-dot active" data-theme="light" style="background:#ffffff;border-color:#cbd5e1" onclick="applyTheme('light')" data-i18n-title="themeLight" title="白色简约"></button>
+        <button class="theme-dot" data-theme="navy" style="background:#0a0e17" onclick="applyTheme('navy')" data-i18n-title="themeNavy" title="深蓝黑"></button>
+        <button class="theme-dot" data-theme="midnight" style="background:#0d1526" onclick="applyTheme('midnight')" data-i18n-title="themeMidnight" title="午夜深蓝"></button>
+        <button class="theme-dot" data-theme="oled" style="background:#000" onclick="applyTheme('oled')" data-i18n-title="themeOled" title="纯黑 OLED"></button>
+        <button class="theme-dot" data-theme="graphite" style="background:#15161a" onclick="applyTheme('graphite')" data-i18n-title="themeGraphite" title="石墨灰"></button>
+      </div>
+    </div>
+    <button class="settings-btn" id="settings-btn" onclick="openSettings()">⚙ 策略设置</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat"><span class="label" data-i18n="balance">余额</span><span class="val" id="s-balance">--</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="label" data-i18n="unrealizedPnl">未实现盈亏</span><span class="val" id="s-upnl">--</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="label" data-i18n="availableBalance">可用余额</span><span class="val" id="s-avail">--</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="label" data-i18n="positions">持仓数</span><span class="val" id="s-pos">0</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="label" data-i18n="leverage">杠杆</span><span class="val" id="s-lev">--</span></div>
+    <div class="stat-divider"></div>
+    <div class="stat"><span class="label" data-i18n="fundingRate">资金费率</span><span class="val" id="s-funding">--</span></div>
+  </div>
+
+  <div class="metric-strip">
+    <div class="metric-card accent"><div class="eyebrow" data-i18n="activeSystem">当前系统</div><div class="metric-value" id="metric-system" data-system-label="trend_following">趋势跟随</div><div class="metric-sub" data-i18n="htfConfirmation">15m · 高周期 1h 确认</div></div>
+    <div class="metric-card"><div class="eyebrow" data-i18n="marketRegime">市场状态</div><div class="metric-value" id="metric-regime">等待数据</div><div class="metric-sub" data-i18n="regimeTypes">趋势 / 震荡 / 高波动</div></div>
+    <div class="metric-card"><div class="eyebrow" data-i18n="signalQuality">信号质量</div><div class="metric-value" id="metric-quality">--</div><div class="metric-sub" data-i18n="technicalConfidence">技术信号置信度</div></div>
+    <div class="metric-card"><div class="eyebrow" data-i18n="riskBudget">风险预算</div><div class="metric-value" id="metric-risk">--</div><div class="metric-sub" data-i18n="dailyRiskUtilization">日内风险使用率</div></div>
+    <div class="metric-card"><div class="eyebrow" data-i18n="execution">执行状态</div><div class="metric-value" id="metric-execution">监控中</div><div class="metric-sub" data-i18n="ordersProtection">订单与保护单</div></div>
+    <div class="metric-card"><div class="eyebrow" data-i18n="dataFreshness">数据新鲜度</div><div class="metric-value" id="metric-freshness">--</div><div class="metric-sub" data-i18n="lastStatusUpdate">最近状态更新</div></div>
+  </div>
+
+  <!-- Resizer: Top Metrics Splitter -->
+  <div class="splitter-row" id="splitter-top" title="拖拽调整大小 · 双击快速折叠/展开统计卡片">
+    <button type="button" class="splitter-toggle-btn" id="btn-toggle-top" onclick="event.stopPropagation(); toggleMetricStripCollapse()" title="折叠/展开统计卡片">▴</button>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-area" id="main-chart-area">
+    <button id="chart-fullscreen-exit" class="chart-fullscreen-exit-btn" onclick="toggleChartFullscreen()" title="退出全屏 (快捷键: ESC)">✕ <span data-i18n="exitFullscreen">退出全屏</span></button>
+    <div class="chart-tabbar">
+      <div class="chart-tab active" data-chart-tab="chart" onclick="selectChartTab(this)" data-i18n="chartTab">图表</div>
+      <div class="chart-tab" data-chart-tab="info" onclick="selectChartTab(this)" data-i18n="infoTab">信息</div>
+      <div class="chart-tab" data-chart-tab="data" onclick="selectChartTab(this)" data-i18n="dataTab">数据</div>
+    </div>
+    <div class="chart-toolbar" data-chart-panel="chart">
+      <div class="chart-timeframes" aria-label="Timeframe">
+        <button class="chart-timeframe" data-chart-interval="1m" onclick="selectChartInterval('1m')" data-i18n="timeframe1m">1分</button>
+        <button class="chart-timeframe" data-chart-interval="5m" onclick="selectChartInterval('5m')" data-i18n="timeframe5m">5分</button>
+        <button class="chart-timeframe" data-chart-interval="15m" onclick="selectChartInterval('15m')" data-i18n="timeframe15m">15分</button>
+        <button class="chart-timeframe" data-chart-interval="1h" onclick="selectChartInterval('1h')" data-i18n="timeframe1h">1小时</button>
+        <button class="chart-timeframe" data-chart-interval="4h" onclick="selectChartInterval('4h')" data-i18n="timeframe4h">4小时</button>
+        <button class="chart-timeframe" data-chart-interval="1d" onclick="selectChartInterval('1d')" data-i18n="timeframe1d">1天</button>
+        <button class="chart-timeframe" data-chart-interval="1w" onclick="selectChartInterval('1w')" data-i18n="timeframe1w">1周</button>
+      </div>
+      <div class="view-toggle">
+        <button class="active" id="view-single" onclick="switchView('single')" data-i18n="singleSymbol">单币</button>
+        <button id="view-positions" onclick="switchView('positions')" data-i18n="positionCharts">持仓图表</button>
+        <button id="view-equity" onclick="switchView('equity')">📈 资金权益走势</button>
+        <button id="view-momentum" onclick="switchView('momentum')">🌐 多币动能热力</button>
+      </div>
+      <select id="symbol-select" onchange="loadKlines(); loadAIAnalysis()"></select>
+      <select id="interval-select">
+        <option value="1m">1m</option><option value="5m" selected>5m</option>
+        <option value="15m">15m</option><option value="1h">1h</option><option value="4h">4h</option><option value="1d">1d</option><option value="1w">1w</option>
+      </select>
+      <button class="btn-sm" onclick="loadKlines()" data-i18n="refresh">刷新</button>
+      <button id="chart-order-mode" class="chart-order-mode" onclick="toggleChartOrderMode()" data-i18n="chartOrder">图上开单</button>
+      <div class="chart-layout-controls" aria-label="图表空间预设">
+        <button type="button" class="layout-preset-btn" id="layout-btn-max" onclick="setChartLayoutMode('max-chart')" title="满屏看图：折叠底部面板，K线最大化">⛶ 满屏K线</button>
+        <button type="button" class="layout-preset-btn" id="layout-btn-default" onclick="setChartLayoutMode('default')" title="均衡模式：K线与底部均衡显示">◫ 均衡</button>
+        <button type="button" class="layout-preset-btn" id="layout-btn-half" onclick="setChartLayoutMode('half')" title="对半模式：K线与底部分半显示">⚖ 对半</button>
+      </div>
+      <button id="chart-fullscreen-btn" class="btn-sm chart-fullscreen-btn" onclick="toggleChartFullscreen()" title="K线全屏沉浸看盘 (快捷键: ESC退出)"><span class="fs-icon">⛶</span> <span class="fs-text" data-i18n="chartFullscreen">全屏</span></button>
+      <button id="chart-obsidian-snapshot-btn" class="btn-sm" onclick="openSnapshotModal()" title="截图标注并保存至Obsidian复盘日记" style="color:#c4b5fd;border-color:rgba(168,85,247,0.4);background:rgba(168,85,247,0.12);font-weight:600;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
+        📸 <span data-i18n="obsidianSnapshot">记入Obsidian</span>
+      </button>
+      <div class="chart-tool-icons" aria-label="Chart controls">
+        <button class="chart-tool-icon" type="button" data-i18n-title="chartCompare" title="对比" onclick="selectChartTab(document.querySelector('[data-chart-tab=data]'))">⌁</button>
+        <button class="chart-tool-icon" type="button" data-i18n-title="chartIndicator" title="指标" onclick="document.querySelector('[data-chart-line=ema]')?.click()">∿</button>
+        <button class="chart-tool-icon" type="button" data-i18n-title="chartSnapshot" title="截图标注存入Obsidian" onclick="openSnapshotModal()">📸</button>
+      </div>
+      <div class="theme-switcher toolbar-palette" data-i18n-title="themePalette" title="界面配色">
+        <span style="font-size:11px;color:var(--text-2);margin-right:1px;" title="界面配色">🎨</span>
+        <button class="theme-dot active" data-theme="light" style="background:#ffffff;border-color:#cbd5e1" onclick="applyTheme('light')" data-i18n-title="themeLight" title="白色简约"></button>
+        <button class="theme-dot" data-theme="navy" style="background:#0a0e17" onclick="applyTheme('navy')" data-i18n-title="themeNavy" title="深蓝黑"></button>
+        <button class="theme-dot" data-theme="midnight" style="background:#0d1526" onclick="applyTheme('midnight')" data-i18n-title="themeMidnight" title="午夜深蓝"></button>
+        <button class="theme-dot" data-theme="oled" style="background:#000" onclick="applyTheme('oled')" data-i18n-title="themeOled" title="纯黑 OLED"></button>
+        <button class="theme-dot" data-theme="graphite" style="background:#15161a" onclick="applyTheme('graphite')" data-i18n-title="themeGraphite" title="石墨灰"></button>
+      </div>
+      <span style="flex:1"></span>
+      <span style="font-size:13px;color:var(--text-1);font-weight:600" id="price-display">--</span>
+    </div>
+    <div class="chart-line-controls" data-chart-panel="chart">
+      <span class="line-control-title" data-i18n="chartLines">图表线条</span>
+      <label><input type="checkbox" data-chart-line="entry" checked onchange="setChartLineVisibility('entry', this.checked)"><span data-i18n="entryLine">我的开仓线</span></label>
+      <label><input type="checkbox" data-chart-line="stop" checked onchange="setChartLineVisibility('stop', this.checked)"><span data-i18n="stopLine">止损线</span></label>
+      <label><input type="checkbox" data-chart-line="takeProfit" onchange="setChartLineVisibility('takeProfit', this.checked)"><span data-i18n="takeProfitLines">止盈线</span></label>
+      <label><input type="checkbox" data-chart-line="levels" checked onchange="setChartLineVisibility('levels', this.checked)"><span data-i18n="supportResistanceLines">支撑 / 压力</span></label>
+      <label><input type="checkbox" data-chart-line="ema" checked onchange="setChartLineVisibility('ema', this.checked)"><span data-i18n="emaLines">EMA 均线</span></label>
+      <label><input type="checkbox" data-chart-line="boll" onchange="setChartLineVisibility('boll', this.checked)"><span>BOLL 布林带</span></label>
+      <label><input type="checkbox" data-chart-line="tradeMarkers" checked onchange="setChartLineVisibility('tradeMarkers', this.checked)"><span>买卖点打点</span></label>
+      <label><input type="checkbox" data-chart-line="vwap" onchange="setChartLineVisibility('vwap', this.checked)"><span data-i18n="vwapLine">VWAP</span></label>
+      <label><input type="checkbox" data-chart-line="denseZones" checked onchange="setChartLineVisibility('denseZones', this.checked)"><span data-i18n="denseVolumeZones">密集成交区</span></label>
+      <label><input type="checkbox" data-chart-line="swingPoints" checked onchange="setChartLineVisibility('swingPoints', this.checked)"><span data-i18n="swingPoints">趋势高低点</span></label>
+      <span style="border-left:1px solid var(--border);height:14px;margin:0 4px"></span>
+      <span class="line-control-title">副图指标:</span>
+      <button type="button" class="btn-sub-ind active" id="sub-ind-vol" onclick="switchSubIndicator('vol')">VOL 成交量</button>
+      <button type="button" class="btn-sub-ind" id="sub-ind-macd" onclick="switchSubIndicator('macd')">MACD (12,26,9)</button>
+      <button type="button" class="btn-sub-ind" id="sub-ind-rsi" onclick="switchSubIndicator('rsi')">RSI (14)</button>
+      <span id="chart-order-hint" class="chart-order-hint" data-i18n="chartOrderHint">开启后点击K线价格，快速填写限价开仓单</span>
+    </div>
+    <div class="system-overview" id="system-overview" data-chart-panel="chart">
+      <div class="system-card selected" data-system="trend" onclick="selectSystemPreview(this, 'trend_following')">
+        <div class="card-kicker"><span data-i18n="coreSystem">核心系统</span><span class="system-pill" data-i18n="active">启用中</span></div>
+        <div class="card-title" data-i18n="trendFollowing">趋势跟随</div>
+        <div class="card-copy" data-i18n="trendFollowingCopy">EMA 结构、高周期共振、动量过滤与闭合 K 线确认。</div>
+      </div>
+      <div class="system-card" data-system="breakout" onclick="selectSystemPreview(this, 'breakout')">
+        <div class="card-kicker"><span data-i18n="preview">预览</span><span class="system-pill preview" data-i18n="readOnly">只读</span></div>
+        <div class="card-title" data-i18n="breakoutMomentum">突破动量</div>
+        <div class="card-copy" data-i18n="breakoutCopy">区间扩张、成交量确认与波动率状态切换。</div>
+      </div>
+      <div class="system-card" data-system="mean-reversion" onclick="selectSystemPreview(this, 'mean_reversion')">
+        <div class="card-kicker"><span data-i18n="preview">预览</span><span class="system-pill preview" data-i18n="readOnly">只读</span></div>
+        <div class="card-title" data-i18n="meanReversion">均值回归</div>
+        <div class="card-copy" data-i18n="meanReversionCopy">RSI 极值、布林带偏离、回归确认与保护。</div>
+      </div>
+      <div class="system-card" data-system="smart-money" onclick="selectSystemPreview(this, 'smart_money')">
+        <div class="card-kicker"><span data-i18n="flow">资金流</span><span class="system-pill preview" data-i18n="readOnly">只读</span></div>
+        <div class="card-title" data-i18n="smartFlow">聪明钱</div>
+        <div class="card-copy" data-i18n="smartFlowCopy">大户持仓、持仓量、资金费率与市场拥挤度。</div>
+      </div>
+      <div class="system-card" data-system="grid" onclick="selectSystemPreview(this, 'grid')">
+        <div class="card-kicker"><span data-i18n="range">区间</span><span class="system-pill preview" data-i18n="readOnly">只读</span></div>
+        <div class="card-title" data-i18n="gridSystem">网格系统</div>
+        <div class="card-copy" data-i18n="gridCopy">区间识别、ATR 间距、分层挂单与仓位上限。</div>
+      </div>
+      <div class="system-card" data-system="ensemble" onclick="selectSystemPreview(this, 'ensemble')">
+        <div class="card-kicker"><span data-i18n="ensemble">组合</span><span class="system-pill preview" data-i18n="readOnly">只读</span></div>
+        <div class="card-title" data-i18n="ensembleVote">组合投票</div>
+        <div class="card-copy" data-i18n="ensembleCopy">多系统一致性、置信度聚合与风险门槛。</div>
+      </div>
+    </div>
+     <div class="status-banner" data-chart-panel="chart"><span>●</span><strong data-i18n="positionProtection">持仓保护模式</strong><span data-i18n="positionProtectionCopy">当前界面仅用于参数与系统预览，不会修改、平仓或新增当前持仓。</span></div>
+    <div class="advice-bar" id="advice-bar" data-chart-panel="chart"><span class="advice-loading" data-i18n="aiLoading">AI 建议加载中...</span></div>
+    <div class="chart-canvas-shell" data-chart-panel="chart">
+      <div class="chart-tool-rail" aria-label="Chart drawing tools">
+        <button class="chart-rail-tool active" type="button" data-tool="cursor" onclick="selectChartTool('cursor', this)" data-i18n-title="chartCursor" title="光标">＋</button>
+        <button class="chart-rail-tool" type="button" data-tool="trend" onclick="selectChartTool('trend', this)" data-i18n-title="chartTrendLine" title="趋势线">╱</button>
+        <button class="chart-rail-tool" type="button" data-tool="hline" onclick="selectChartTool('hline', this)" data-i18n-title="chartHorizontalLine" title="水平线">☰</button>
+        <button class="chart-rail-tool" type="button" data-tool="measure" onclick="selectChartTool('measure', this)" data-i18n-title="chartMeasure" title="测量">⌁</button>
+        <button class="chart-rail-tool" type="button" data-tool="fullscreen" onclick="toggleChartFullscreen()" data-i18n-title="chartFullscreen" title="全屏看盘">⛶</button>
+        <button class="chart-rail-tool" type="button" data-tool="clear" onclick="clearChartDrawings()" title="清除画线与测量">✕</button>
+      </div>
+      <div class="chart-plot-wrap">
+        <div id="chart-tool-toast" class="chart-tool-toast" style="display:none"></div>
+        <div id="chart-measure-hud" style="display:none;position:absolute;z-index:20;background:rgba(15,23,42,0.94);border:1px solid #8b5cf6;border-radius:6px;padding:8px 12px;color:#fff;font-size:11px;box-shadow:0 8px 24px rgba(0,0,0,0.6);pointer-events:auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:4px">
+            <strong style="color:#a78bfa">📏 多空点对点测量</strong>
+            <span onclick="hideMeasureTooltip()" style="cursor:pointer;color:var(--text-2);font-weight:700">✕</span>
+          </div>
+          <div id="chart-measure-text" style="line-height:1.6"></div>
+        </div>
+        <div class="chart-symbol-overlay">
+          <div class="chart-symbol-title"><strong id="chart-symbol-name">--</strong> <span data-i18n="chartContract">永续</span> · <span id="chart-interval-name">5分</span> · <span data-i18n="chartVenue">Binance</span></div>
+          <div id="chart-ohlc" class="chart-ohlc">开=-- 高=-- 低=-- 收=-- <span id="chart-change">--</span></div>
+        </div>
+        <div id="kline-chart"></div>
+        <div class="chart-volume-overlay"><span data-i18n="chartVolume">成交量 (Volume)</span><strong id="chart-volume-value">--</strong></div>
+      </div>
+    </div>
+    <div class="chart-statusbar" data-chart-panel="chart">
+      <div class="score-panel" id="score-panel" aria-label="Signal score">
+        <div class="title" data-i18n="signalScore">信号评分</div>
+        <div class="score-value neutral" id="score-val">0</div>
+        <div class="score-bar" aria-hidden="true"><div class="score-bar-fill" id="score-fill" style="width:50%;background:var(--text-2)"></div></div>
+        <button class="score-toggle" id="score-toggle" type="button" aria-expanded="true" data-i18n-title="scoreCollapse" title="折叠信号评分">-</button>
+      </div>
+      <span id="chart-date-status">--</span>
+      <span data-i18n="chartTimezone">UTC+8</span>
+      <span data-i18n="chartPercent">%</span>
+      <span data-i18n="chartLog">log</span>
+      <span class="status-auto" data-i18n="chartAuto">自动</span>
+    </div>
+    <div id="positions-grid" data-chart-panel="chart"></div>
+    <div id="equity-view" data-chart-panel="chart" style="display:none;flex:1;height:100%;min-height:300px"></div>
+    <div id="momentum-view" data-chart-panel="chart" style="display:none;flex:1;height:100%;min-height:300px"></div>
+    <section id="chart-info-panel" class="chart-tab-panel chart-info-panel" data-chart-panel="info" hidden aria-live="polite"></section>
+    <section id="chart-data-panel" class="chart-tab-panel chart-data-panel" data-chart-panel="data" hidden aria-live="polite"></section>
+  </div>
+
+  <!-- Resizer: Side Panel Splitter -->
+  <div class="splitter-col" id="splitter-side" title="左右拖拽调整图表与侧栏宽度 · 双击快速折叠/展开侧栏">
+    <button type="button" class="splitter-toggle-btn" id="btn-toggle-side" onclick="event.stopPropagation(); toggleSidePanelCollapse()" title="折叠/展开侧栏">▸</button>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="side-panel">
+    <div class="side-tabs">
+       <div class="side-tab active" data-tab="indicators" onclick="switchSideTab(this)" data-i18n="indicators">指标</div>
+       <div class="side-tab" data-tab="ai" onclick="switchSideTab(this)" data-i18n="aiAnalysis">AI分析</div>
+       <div class="side-tab" data-tab="obsidian" onclick="switchSideTab(this)" title="Obsidian 知识库策略实时匹配">📓 策略匹配</div>
+       <div class="side-tab" data-tab="positions" onclick="switchSideTab(this)" data-i18n="positionsTab">持仓</div>
+       <div class="side-tab" data-tab="rankings" onclick="switchSideTab(this)" data-i18n="rankings">榜单查询</div>
+       <div class="side-tab" data-tab="recommend" onclick="switchSideTab(this)" data-i18n="recommendations">推荐</div>
+    </div>
+    <div class="side-content" id="side-indicators">
+      <div class="smart-card" id="smart-money-card">
+         <div class="smart-head"><span class="smart-title" data-i18n="smartMoney">聪明钱</span><span class="smart-label neutral" data-i18n="waitingData">等待数据</span></div>
+         <div class="smart-reason" data-i18n="smartMoneyReason">综合大户持仓、大户账户、散户拥挤、持仓量、价格与资金费率。</div>
+      </div>
+       <div class="ind-grid" id="ind-grid"><div class="empty-state" data-i18n="waitingData">等待数据</div></div>
+    </div>
+    <div class="side-content" id="side-ai" style="display:none">
+       <div id="ai-panel"><div class="empty-state" data-i18n="aiLoading">AI 建议加载中...</div></div>
+    </div>
+    <div class="side-content" id="side-obsidian" style="display:none;padding:10px;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <div>
+          <strong style="font-size:12px;color:var(--text-0)">知识库策略实时匹配</strong>
+          <span id="obs-match-symbol-badge" style="font-size:11px;color:#a78bfa;margin-left:6px;font-weight:700">--</span>
+        </div>
+        <button class="rec-refresh" onclick="loadObsidianStrategyMatch(currentSymbol)" style="padding:3px 8px;font-size:11px">🔄 刷新</button>
+      </div>
+      <div id="obs-match-list">
+        <div class="empty-state">正在评估知识库策略规则...</div>
+      </div>
+    </div>
+    <div class="side-content" id="side-positions" style="display:none">
+       <div id="pos-list"><div class="empty-state" data-i18n="noPositions">暂无持仓</div></div>
+    </div>
+    <div class="side-content" id="side-rankings" style="display:none">
+      <div class="rank-toolbar">
+         <span style="font-size:11px;color:var(--text-2)" data-i18n="priceBelow">价格低于</span>
+        <input id="rank-max-price" type="number" min="0.000001" step="0.1" value="5">
+        <span style="font-size:11px;color:var(--text-2)">U</span>
+         <button class="rec-refresh" onclick="loadMarketRankings(true)" data-i18n="query">查询</button>
+      </div>
+      <div class="rank-tabs">
+         <button class="rank-tab active" data-rank="gainers" onclick="switchRanking(this)" data-i18n="topGainers">涨幅前20</button>
+         <button class="rank-tab" data-rank="losers" onclick="switchRanking(this)" data-i18n="topLosers">跌幅前20</button>
+         <button class="rank-tab" data-rank="volume" onclick="switchRanking(this)" data-i18n="topVolume">成交额前20</button>
+      </div>
+      <div id="rank-meta" class="rec-meta">查询低价USDT合约24小时榜单</div>
+      <div id="rank-list"><div class="empty-state">点击查询加载榜单</div></div>
+    </div>
+    <div class="side-content" id="side-recommend" style="display:none">
+      <div class="rec-bar-clean">
+        <div class="rec-bar-info">
+          <span class="rec-bar-heading">🎯 实时优质合约机会</span>
+          <span id="rec-meta" class="rec-meta">全市场多空机会动态扫描</span>
+        </div>
+        <button class="rec-refresh" onclick="loadRecommend(true)" data-i18n="refresh">🔄 刷新</button>
+      </div>
+      <div id="rec-list"><div class="empty-state">点击刷新扫描全市场...</div></div>
+    </div>
+  </div>
+
+  <!-- Resizer: Bottom Panel Splitter -->
+  <div class="splitter-row" id="splitter-bottom" title="上下拖拽调整底部面板高度 · 双击快速折叠/展开日志面板">
+    <div class="splitter-left-wrap">
+      <button type="button" class="splitter-toggle-btn" id="btn-toggle-bottom" onclick="event.stopPropagation(); toggleBottomPanelCollapse()" title="折叠/展开底部面板">▾</button>
+      <span class="splitter-title-hint">📊 日志与执行面板</span>
+    </div>
+    <div class="splitter-grip-bar" title="上下拖拽自由调整高度 · 双击切换折叠">
+      <span class="splitter-grip-dot"></span>
+      <span class="splitter-grip-dot"></span>
+      <span class="splitter-grip-dot"></span>
+      <span class="splitter-grip-dot"></span>
+      <span class="splitter-grip-dot"></span>
+    </div>
+    <div class="splitter-presets-wrap">
+      <button type="button" class="splitter-preset-chip" id="splitter-chip-max" onclick="event.stopPropagation(); setChartLayoutMode('max-chart')" title="折叠底部面板，让K线占满屏幕">⛶ 纯享大图 (0px)</button>
+      <button type="button" class="splitter-preset-chip" id="splitter-chip-default" onclick="event.stopPropagation(); setChartLayoutMode('default')" title="默认均衡高度 160px">◫ 均衡 (160px)</button>
+      <button type="button" class="splitter-preset-chip" id="splitter-chip-half" onclick="event.stopPropagation(); setChartLayoutMode('half')" title="图表与底部面板对半平分 50%">⚖ 对半 (50%)</button>
+      <button type="button" class="splitter-preset-chip" id="splitter-chip-logs" onclick="event.stopPropagation(); setChartLayoutMode('logs')" title="展开日志区域 60%">📋 宽裕日志 (60%)</button>
+    </div>
+  </div>
+
+  <!-- Bottom Panel -->
+  <div class="bottom-panel">
+    <div class="bottom-tabs">
+       <div class="bottom-tab active" data-tab="signals" onclick="switchBottomTab(this)" data-i18n="signalLog">信号日志</div>
+       <div class="bottom-tab" data-tab="news" onclick="switchBottomTab(this)" data-i18n="newsSentiment">新闻情绪</div>
+       <div class="bottom-tab" data-tab="trades" onclick="switchBottomTab(this)" data-i18n="tradeRecords">成交记录</div>
+       <div class="bottom-tab" data-tab="execution" onclick="switchBottomTab(this)" data-i18n="executionDiagnostics">执行诊断</div>
+    </div>
+    <div class="bottom-content" id="bottom-signals"><div class="empty-state">等待策略信号...</div></div>
+    <div class="bottom-content" id="bottom-news" style="display:none"><div class="empty-state">加载新闻中...</div></div>
+    <!-- Tab 3: 成交记录 -->
+    <div class="bottom-content" id="bottom-trades" style="display:none">
+      <div class="tab-action-bar">
+        <div class="tab-summary-hud">
+          <span class="hud-item">📊 成交记录: <strong id="trades-count-badge">0</strong> 笔</span>
+          <span class="hud-item">净实现盈亏: <strong id="trades-pnl-badge" class="pos">+0.0000 U</strong></span>
+          <span class="hud-item">胜率: <strong id="trades-winrate-badge">0%</strong></span>
+          <span class="hud-item">总手续费: <strong id="trades-fee-badge">0.0000 U</strong></span>
+        </div>
+        <div class="tab-actions-group">
+          <select id="trades-time-filter" onchange="onTradesTimeFilterChange()" class="tab-filter-select" title="按时间范围筛选成交明细">
+            <option value="today">今日成交</option>
+            <option value="24h">近 24 小时</option>
+            <option value="3d">近 3 天</option>
+            <option value="7d" selected>近 7 天 (默认)</option>
+            <option value="30d">近 30 天</option>
+            <option value="all">全部历史成交</option>
+            <option value="custom">自定义日期范围...</option>
+          </select>
+          <div id="trades-custom-date-wrap" style="display:none;align-items:center;gap:4px;">
+            <input type="date" id="trades-start-date" class="tab-filter-select" style="padding:2px 6px;font-size:11px;" title="开始日期" />
+            <span style="font-size:11px;color:var(--text-2)">至</span>
+            <input type="date" id="trades-end-date" class="tab-filter-select" style="padding:2px 6px;font-size:11px;" title="结束日期" />
+            <button type="button" class="tab-action-btn" style="padding:2px 8px;font-size:11px;" onclick="loadTrades()">确定</button>
+          </div>
+          <select id="trades-symbol-filter" onchange="filterTradesList()" class="tab-filter-select" title="按币种筛选">
+            <option value="">全部标的</option>
+          </select>
+          <select id="trades-type-filter" onchange="filterTradesList()" class="tab-filter-select" title="按方向/操作筛选">
+            <option value="">全部类型</option>
+            <option value="open">仅开仓</option>
+            <option value="close">仅平仓/止盈止损</option>
+          </select>
+          <button type="button" class="tab-action-btn primary" onclick="syncAndRefreshTrades()" title="从币安实盘实时拉取最新成交记录">🔄 刷新同步币安</button>
+          <button type="button" class="tab-action-btn" onclick="exportTradesCsv()" title="导出成交记录为CSV文件">📥 导出CSV</button>
+        </div>
+      </div>
+      <div class="tab-table-wrap" id="trades-table-container">
+        <div class="empty-state">正在加载成交记录...</div>
+      </div>
+    </div>
+
+    <!-- Tab 4: 执行诊断 -->
+    <div class="bottom-content" id="bottom-execution" style="display:none">
+      <div class="diag-hud-grid">
+        <div class="diag-hud-card">
+          <div class="diag-hud-label">⚡ API 连通性 & 延迟</div>
+          <div class="diag-hud-val" id="diag-api-status"><span class="status-dot green"></span> 正常连接 <small id="diag-api-latency" style="font-size:10px;color:var(--text-2)"></small></div>
+          <div class="diag-hud-sub" id="diag-time-offset">时钟偏移: 0 ms</div>
+        </div>
+        <div class="diag-hud-card">
+          <div class="diag-hud-label">🛡️ 日内风控预算</div>
+          <div class="diag-hud-val" id="diag-risk-status">安全监控中</div>
+          <div class="diag-hud-sub" id="diag-risk-detail">日损: 0.0% / 熔断线 5.0%</div>
+        </div>
+        <div class="diag-hud-card">
+          <div class="diag-hud-label">⚙️ 自动交易与持仓配额</div>
+          <div class="diag-hud-val" id="diag-auto-status">监控中</div>
+          <div class="diag-hud-sub" id="diag-pos-quota">持仓配额: -- / -- 仓</div>
+        </div>
+        <div class="diag-hud-card">
+          <div class="diag-hud-label">🤖 AI 投委会风控审查</div>
+          <div class="diag-hud-val" id="diag-ai-status">双重风控</div>
+          <div class="diag-hud-sub" id="diag-min-notional">名义缓冲: 6%</div>
+        </div>
+      </div>
+      <div class="tab-action-bar">
+        <div class="tab-actions-group">
+          <span style="font-size:11px;font-weight:600;color:var(--text-2)">🔍 事件筛选:</span>
+          <button type="button" class="diag-filter-chip active" onclick="filterDiagEvents('all', this)">全部</button>
+          <button type="button" class="diag-filter-chip" onclick="filterDiagEvents('success', this)">成功</button>
+          <button type="button" class="diag-filter-chip" onclick="filterDiagEvents('failed', this)">拦截 / 异常</button>
+          <button type="button" class="diag-filter-chip" onclick="filterDiagEvents('skipped', this)">跳过</button>
+        </div>
+        <div class="tab-actions-group">
+          <button type="button" class="tab-action-btn primary" id="btn-diag-self-check" onclick="runDiagnosticsSelfCheck()" title="发起实盘API响应测试与标的下单规则自检">⚡ 一键自检</button>
+          <button type="button" class="tab-action-btn" onclick="loadExecutionEvents()" title="刷新执行诊断记录">🔄 刷新</button>
+        </div>
+      </div>
+      <div class="execution-events-wrap" id="execution-events-list">
+        <div class="empty-state" data-i18n="noExecutionEvents">暂无执行事件</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Obsidian Knowledge Hub Modal -->
+<div id="obsidian-modal-overlay" class="obsidian-modal-overlay" style="display:none">
+  <div class="obsidian-modal">
+    <div class="obsidian-modal-head">
+      <h3><span>📓</span> Obsidian 交易知识库 · 策略与交易习惯进化中心</h3>
+      <button class="obsidian-modal-close" onclick="closeObsidianHub()">✕</button>
+    </div>
+    <div class="obsidian-tabs">
+      <div class="obsidian-tab active" data-obs-tab="habits" onclick="switchObsidianTab('habits')">🧠 交易习惯雷达与进化诊断</div>
+      <div class="obsidian-tab" data-obs-tab="strategies" onclick="switchObsidianTab('strategies')">📋 我的策略知识库 (<span id="obs-strat-count">0</span>)</div>
+      <div class="obsidian-tab" data-obs-tab="evolution" onclick="switchObsidianTab('evolution')">🧪 备选策略历史模拟与自进化</div>
+      <div class="obsidian-tab" data-obs-tab="config" onclick="switchObsidianTab('config')">⚙️ 知识库路径与同步</div>
+    </div>
+    <div class="obsidian-body">
+      <!-- 1. 交易习惯板块 -->
+      <div id="obs-tab-habits">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <span style="font-size:13px;color:var(--text-1)">行为金融学量化评估（最近 7 天）</span>
+            <span id="obs-habit-sync-time" style="font-size:11px;color:var(--text-2);margin-left:8px"></span>
+          </div>
+          <button class="rec-refresh" onclick="syncCurrentTradesToObsidian()" style="background:#7c3aed;color:#fff;border-color:#8b5cf6;padding:5px 14px;font-weight:600">⚡ 立即同步今日复盘与习惯至 Obsidian</button>
+        </div>
+        <div class="habit-container">
+          <div class="habit-radar-box">
+            <span style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:.6px">五维交易习惯雷达</span>
+            <div id="habit-radar-chart" class="habit-radar-chart"></div>
+            <div class="habit-score-badge" id="habit-overall-score">--</div>
+            <div class="habit-stage-pill" id="habit-stage-pill">--</div>
+          </div>
+          <div class="habit-diag-box">
+            <div class="habit-diag-sec">
+              <h4 style="color:#34d399"><span>✅</span> 保持的良好交易习惯 (Strengths)</h4>
+              <div id="habit-strengths-list"><div class="habit-diag-item pos">分析中...</div></div>
+            </div>
+            <div class="habit-diag-sec">
+              <h4 style="color:#f87171"><span>⚠️</span> 亟待克服的行为弱点 (Discipline Warnings)</h4>
+              <div id="habit-warnings-list"><div class="habit-diag-item warn">分析中...</div></div>
+            </div>
+            <div style="margin-top:14px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text-2)">
+              💡 交易习惯分析会实时检测您的开仓追涨（FOMO）、止损拖延、提前止盈与报复性交易，并在写入 Obsidian 时生成长效追踪笔记。
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 策略知识库板块 -->
+      <div id="obs-tab-strategies" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <span style="font-size:12px;color:var(--text-2)">卡帕西 (Karpathy) LLM-Wiki 知识库 · 多策略自维护矩阵</span>
+          <div style="display:flex;gap:8px">
+            <button id="btn-obs-compile" class="rec-refresh" onclick="compileObsidianVault()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;border-color:#8b5cf6;padding:5px 12px;font-weight:600" title="执行卡帕西 AI-Wiki 编译器，自动重新归因实盘战绩并生成 MOC 知识地图">⚡ 自维护编译 (Karpathy Wiki)</button>
+            <button class="rec-refresh" onclick="loadObsidianStrategies(true)">🔄 重新扫描策略</button>
+          </div>
+        </div>
+        <div id="obs-strategy-list">
+          <div class="empty-state">正在加载策略库...</div>
+        </div>
+      </div>
+
+      <!-- 3. 备选策略历史模拟与自进化板块 -->
+      <div id="obs-tab-evolution" style="display:none">
+        <div style="background:var(--bg-2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div>
+              <strong style="color:var(--text-0);font-size:13px">🧪 备选量化策略全周期模拟与 AI 自进化工作台</strong>
+              <div style="font-size:11px;color:var(--text-2);margin-top:2px">70% 历史数据样本内参数寻优 + 30% 样本外真实防过拟合检验，自动升级策略战力并反哺知识库</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="btn-evo-backtest" class="rec-refresh" onclick="runStrategyBacktestUI()" style="background:#2563eb;color:#fff;border-color:#3b82f6;padding:6px 14px;font-weight:600">▶️ 模拟历史回测</button>
+              <button id="btn-evo-auto" class="rec-refresh" onclick="runStrategyAutoImproveUI()" style="background:#7c3aed;color:#fff;border-color:#8b5cf6;padding:6px 16px;font-weight:700">⚡ 一键自动改进与进化</button>
+            </div>
+          </div>
+
+          <!-- 控制面板：选择策略与标的 -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+            <div>
+              <span style="font-size:11px;color:var(--text-2)">选择备选策略</span>
+              <select id="evo-strat-select" class="obsidian-input" style="width:100%;margin-top:3px;padding:5px 8px;font-size:12px" onchange="onEvolutionStrategyChange()"></select>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:11px;color:var(--text-2)">回测标的 Symbol</span>
+                <a href="javascript:void(0)" onclick="promptCustomBacktestSymbol()" style="font-size:11px;color:#3b82f6;text-decoration:none;font-weight:600" title="输入任意币安合约代码">➕自定义</a>
+              </div>
+              <select id="evo-symbol-select" class="obsidian-input" style="width:100%;margin-top:3px;padding:5px 8px;font-size:12px" onchange="onEvolutionSymbolChange()">
+                <option value="BTCUSDT">正在加载持仓与候选标的...</option>
+              </select>
+            </div>
+            <div>
+              <span style="font-size:11px;color:var(--text-2)">K线周期 Timeframe</span>
+              <select id="evo-interval-select" class="obsidian-input" style="width:100%;margin-top:3px;padding:5px 8px;font-size:12px">
+                <option value="15m">15m (高频日内)</option>
+                <option value="1h" selected>1h (波段稳健)</option>
+                <option value="4h">4h (大周期趋势)</option>
+              </select>
+            </div>
+            <div>
+              <span style="font-size:11px;color:var(--text-2)">历史跨度 Length</span>
+              <select id="evo-days-select" class="obsidian-input" style="width:100%;margin-top:3px;padding:5px 8px;font-size:12px">
+                <option value="7">最近 7 天</option>
+                <option value="15" selected>最近 15 天</option>
+                <option value="30">最近 30 天</option>
+                <option value="60">最近 60 天</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 当前策略简介卡片 -->
+        <div id="evo-strat-intro-card" style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <strong id="evo-strat-title" style="color:var(--text-0);font-size:13px">--</strong>
+              <span id="evo-strat-badge" class="obsidian-strat-badge" style="background:rgba(59,130,246,.15);color:#3b82f6;border-color:rgba(59,130,246,.3)">--</span>
+            </div>
+            <p id="evo-strat-desc" style="font-size:11px;color:var(--text-2);margin:4px 0 0">--</p>
+          </div>
+          <div id="evo-last-optimized-badge" style="font-size:11px;color:var(--text-2);text-align:right">
+            尚未进行自进化调优
+          </div>
+        </div>
+
+        <!-- 运行状态指示器 -->
+        <div id="evo-status-bar" style="display:none;margin-bottom:12px;padding:8px 12px;border-radius:6px;font-size:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#60a5fa">
+          ⏳ 正在加载历史数据并执行运算...
+        </div>
+
+        <!-- 结果展示区域 -->
+        <div id="evo-results-container" style="display:none">
+          <!-- 核心指标前后对比卡片 Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(135px, 1fr));gap:10px;margin-bottom:14px">
+            <div class="habit-radar-box" style="padding:10px 12px;text-align:center">
+              <span style="font-size:11px;color:var(--text-2)">🎯 综合胜率 (Win Rate)</span>
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:4px">
+                <span id="evo-base-wr" style="font-size:13px;color:var(--text-2)">--%</span>
+                <span style="font-size:11px;color:var(--text-2)">➔</span>
+                <strong id="evo-imp-wr" style="font-size:17px;color:var(--green)">--%</strong>
+              </div>
+              <span id="evo-wr-delta-pill" class="factor-tag bull" style="font-size:10px;margin-top:4px">+0.0%</span>
+            </div>
+
+            <div class="habit-radar-box" style="padding:10px 12px;text-align:center">
+              <span style="font-size:11px;color:var(--text-2)">📈 全期净收益 (Net PnL)</span>
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:4px">
+                <span id="evo-base-pnl" style="font-size:13px;color:var(--text-2)">--%</span>
+                <span style="font-size:11px;color:var(--text-2)">➔</span>
+                <strong id="evo-imp-pnl" style="font-size:17px;color:var(--green)">--%</strong>
+              </div>
+              <span id="evo-pnl-delta-pill" class="factor-tag bull" style="font-size:10px;margin-top:4px">+0.0%</span>
+            </div>
+
+            <div class="habit-radar-box" style="padding:10px 12px;text-align:center">
+              <span style="font-size:11px;color:var(--text-2)">🛡️ 最大回撤 (Max Drawdown)</span>
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:4px">
+                <span id="evo-base-dd" style="font-size:13px;color:var(--text-2)">--%</span>
+                <span style="font-size:11px;color:var(--text-2)">➔</span>
+                <strong id="evo-imp-dd" style="font-size:17px;color:#38bdf8">--%</strong>
+              </div>
+              <span id="evo-dd-delta-pill" class="factor-tag bull" style="font-size:10px;margin-top:4px">-0.0%</span>
+            </div>
+
+            <div class="habit-radar-box" style="padding:10px 12px;text-align:center">
+              <span style="font-size:11px;color:var(--text-2)">⚖️ 盈亏比 (Profit Factor)</span>
+              <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;margin-top:4px">
+                <span id="evo-base-pf" style="font-size:13px;color:var(--text-2)">--</span>
+                <span style="font-size:11px;color:var(--text-2)">➔</span>
+                <strong id="evo-imp-pf" style="font-size:17px;color:var(--yellow)">--</strong>
+              </div>
+              <span id="evo-pf-delta-pill" class="factor-tag bull" style="font-size:10px;margin-top:4px">+0.0</span>
+            </div>
+          </div>
+
+          <!-- 双净值走势曲线 (ECharts) -->
+          <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong style="color:var(--text-0);font-size:12px">📊 策略净值演化双曲线 (基线原版 vs AI进化调优版)</strong>
+              <div style="display:flex;gap:12px;font-size:11px">
+                <span style="color:var(--text-2)">■ 原基线参数 (初始)</span>
+                <span style="color:#10b981;font-weight:700">■ 进化调优后 (更优胜率/回撤)</span>
+              </div>
+            </div>
+            <div id="evo-equity-chart" style="height:210px;width:100%"></div>
+          </div>
+
+          <!-- 参数对比与落地操作 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+            <!-- 差异表格 -->
+            <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:12px">
+              <strong style="font-size:12px;color:var(--text-0)">⚙️ 策略核心参数微调对比</strong>
+              <div id="evo-params-table-container" style="max-height:160px;overflow-y:auto;margin-top:8px">
+                <table style="width:100%;font-size:11px;border-collapse:collapse">
+                  <thead>
+                    <tr style="border-bottom:1px solid var(--border);color:var(--text-2);text-align:left">
+                      <th style="padding:4px">参数名</th>
+                      <th style="padding:4px">原参数</th>
+                      <th style="padding:4px;color:var(--green)">进化后最佳参数</th>
+                    </tr>
+                  </thead>
+                  <tbody id="evo-params-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 操作与自维护闭环 -->
+            <div style="background:var(--bg-1);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;flex-direction:column;justify-content:space-between">
+              <div>
+                <strong style="font-size:12px;color:var(--text-0)">🚀 进化成果落地与知识库自愈</strong>
+                <p style="font-size:11px;color:var(--text-2);margin:6px 0 12px;line-height:1.6">
+                  自动改进引擎已完成 <b>70% 训练集</b> 与 <b>30% 样本外</b> 的防过拟合检验。您可以一键将新参数更新至您的本地知识库笔记，或直接热应用到实盘机器人。
+                </p>
+                <div id="evo-action-feedback" style="font-size:11px;margin-bottom:8px"></div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="rec-refresh" onclick="syncEvolvedResultToObsidian()" style="background:#7c3aed;color:#fff;border-color:#8b5cf6;flex:1;padding:8px;font-weight:600">📥 同步写回 Obsidian 笔记</button>
+                <button class="rec-refresh" onclick="applyEvolvedPresetToSystem()" style="background:#10b981;color:#000;border-color:#059669;flex:1;padding:8px;font-weight:700">⚡ 热加载应用至实盘</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 配置与同步板块 -->
+      <div id="obs-tab-config" style="display:none">
+        <div class="obsidian-config-card">
+          <strong style="color:var(--text-0);font-size:13px">📁 Obsidian 知识库 (Vault) 路径</strong>
+          <p style="font-size:11px;color:var(--text-2);margin:4px 0 10px">指定存放交易策略、每日复盘日记与交易习惯的 Obsidian 本地文件夹路径</p>
+          <div class="obsidian-config-row">
+            <input id="obs-vault-path-input" class="obsidian-input" type="text" placeholder="例如: E:\Obsidian\交易知识库 或 C:\Users\xxx\Documents\Obsidian">
+            <button class="rec-refresh" onclick="saveObsidianConfig()" style="background:#2563eb;color:#fff;border-color:#3b82f6;padding:8px 16px">保存路径</button>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="rec-refresh" onclick="initObsidianTemplates()" style="color:#c4b5fd;border-color:#8b5cf6;padding:6px 14px">✨ 一键在 Vault 中初始化交易知识体系模板</button>
+            <button class="rec-refresh" onclick="syncSquareGuidelinesToObsidian()" style="color:#38bdf8;border-color:#0284c7;padding:6px 14px">📥 同步最新发帖SOP与爆款模板库</button>
+            <span id="obs-config-status" style="font-size:11px;color:var(--text-2)"></span>
+          </div>
+        </div>
+        <div class="obsidian-config-card">
+          <strong style="color:var(--text-0);font-size:13px">⚡ 自动化连接与同步规范</strong>
+          <ul style="font-size:12px;color:var(--text-1);margin-top:8px;padding-left:18px;line-height:1.8">
+            <li><b>策略自动识别</b>: Vault 中带有 YAML frontmatter (<code>type: ...</code>) 或包含 <code>#策略</code> 标签的 Markdown 笔记会被自动识别为量化策略；</li>
+            <li><b>复盘自动归档</b>: 每日总结会自动写入 <code>02-交易复盘/每日总结/YYYY-MM-DD-交易复盘.md</code>，完全适配 Obsidian 双链与 Callout 格式；</li>
+            <li><b>交易习惯追踪</b>: 自动更新 <code>03-交易习惯与行为进化/交易习惯进化追踪.md</code>，持续沉淀行为金融学指标。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Obsidian Chart Snapshot Modal -->
+<div id="obsidian-snapshot-modal-overlay" class="obsidian-modal-overlay" style="display:none">
+  <div class="obsidian-modal" style="max-width:680px">
+    <div class="obsidian-modal-head">
+      <h3><span>📸</span> 记入 Obsidian 复盘日记 · <span id="snap-sym-title" style="color:#a78bfa">--</span></h3>
+      <button class="obsidian-modal-close" onclick="closeSnapshotModal()">✕</button>
+    </div>
+    <div class="obsidian-body" style="padding:16px 20px">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:6px">
+        当前 K 线图表已自动截取并附带指标标记。写下您的复盘见解或决策思考，将直接追加至当天的 Obsidian 复盘笔记中：
+      </div>
+      <div>
+        <img id="snap-preview-img" class="snapshot-preview-img" alt="Chart Snapshot Preview" />
+      </div>
+      <div style="margin:10px 0 6px">
+        <span style="font-size:11px;color:var(--text-2);margin-right:8px">快捷心得标签:</span>
+        <span class="snapshot-tag-pill" onclick="addSnapshotTag('EMA均线顺势回踩')">EMA均线顺势回踩</span>
+        <span class="snapshot-tag-pill" onclick="addSnapshotTag('放量假突破止损')">放量假突破止损</span>
+        <span class="snapshot-tag-pill" onclick="addSnapshotTag('顶背离提前止盈')">顶背离提前止盈</span>
+        <span class="snapshot-tag-pill" onclick="addSnapshotTag('突破箱体加仓')">突破箱体加仓</span>
+        <span class="snapshot-tag-pill" onclick="addSnapshotTag('FOMO情绪警示')">FOMO情绪警示</span>
+      </div>
+      <div style="margin-top:8px">
+        <textarea id="obs-snapshot-note" rows="3" style="width:100%;box-sizing:border-box;background:var(--bg-2);border:1px solid var(--border);border-radius:6px;color:var(--text-0);padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical" placeholder="写下本次交易或行情的复盘思考（如：开仓理由、止盈止损执行情况、心理情绪反思等）..."></textarea>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">
+        <span id="snap-status-msg" style="font-size:12px"></span>
+        <div style="display:flex;gap:10px">
+          <button class="btn-sm" onclick="closeSnapshotModal()" style="padding:6px 14px">取消</button>
+          <button id="snap-submit-btn" class="rec-refresh" onclick="submitChartSnapshot()" style="background:#7c3aed;color:#fff;border-color:#8b5cf6;padding:6px 18px;font-weight:600">💾 保存并归档至 Obsidian</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Order Ticket Modal -->
+<div id="quick-order-overlay" class="quick-order-overlay" style="display:none" onclick="if(event.target===this)closeQuickOrderModal()">
+  <div class="quick-order-modal">
+    <div class="qo-head">
+      <div class="qo-head-title">
+        <strong id="qo-title-text">⚡ 闪电精准开仓</strong>
+        <span class="qo-head-sub" id="qo-head-sub">自定义杠杆倍数 · 保证金规模 · 智能风险测算</span>
+      </div>
+      <button class="qo-close-btn" onclick="closeQuickOrderModal()" title="关闭">✕</button>
+    </div>
+
+    <div class="qo-body">
+      <!-- Target Summary Strip -->
+      <div class="qo-target-strip">
+        <div class="qo-target-main">
+          <span class="qo-symbol" id="qo-symbol">--</span>
+          <span class="qo-price" id="qo-price">--</span>
+          <span class="qo-change" id="qo-change"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="qo-strategy-tag" id="qo-score-tag">策略评分 --</span>
+        </div>
+      </div>
+
+      <!-- Direction Switch -->
+      <div class="qo-field-group">
+        <div class="qo-label-row">
+          <span class="qo-label">开仓方向 Direction</span>
+          <span class="qo-sub-hint" id="qo-side-hint">根据策略多因子判定</span>
+        </div>
+        <div class="qo-direction-switch">
+          <button type="button" class="qo-dir-btn long active" id="qo-btn-long" onclick="setQuickOrderSide('LONG')">🟢 做多 (LONG)</button>
+          <button type="button" class="qo-dir-btn short" id="qo-btn-short" onclick="setQuickOrderSide('SHORT')">🔴 做空 (SHORT)</button>
+        </div>
+      </div>
+
+      <!-- Leverage Adjustment -->
+      <div class="qo-field-group">
+        <div class="qo-label-row">
+          <span class="qo-label">杠杆倍数 Leverage</span>
+          <span class="qo-sub-hint">合约最高 <span id="qo-max-lev">50</span>x</span>
+        </div>
+        <div class="qo-pills">
+          <button type="button" class="qo-pill qo-lev-pill" data-lev="2" onclick="setQuickOrderLeverage(2)">2x</button>
+          <button type="button" class="qo-pill qo-lev-pill" data-lev="3" onclick="setQuickOrderLeverage(3)">3x</button>
+          <button type="button" class="qo-pill qo-lev-pill active" data-lev="5" onclick="setQuickOrderLeverage(5)">5x</button>
+          <button type="button" class="qo-pill qo-lev-pill" data-lev="10" onclick="setQuickOrderLeverage(10)">10x</button>
+          <button type="button" class="qo-pill qo-lev-pill" data-lev="20" onclick="setQuickOrderLeverage(20)">20x</button>
+        </div>
+        <div class="qo-slider-row">
+          <input type="range" id="qo-lev-slider" min="1" max="50" step="1" value="5" oninput="onQuickOrderLevSlider(this.value)" />
+          <div class="qo-input-with-unit">
+            <input type="number" id="qo-lev-input" min="1" max="125" step="1" value="5" oninput="onQuickOrderLevInput(this.value)" />
+            <span class="unit">x</span>
+          </div>
+        </div>
+
+        <!-- 强平风险与安全缓冲条 (Liquidation Impact Gauge) -->
+        <div class="qo-liq-gauge-wrap" id="qo-liq-gauge-wrap">
+          <div class="qo-liq-gauge-header">
+            <span style="color:var(--text-2);display:inline-flex;align-items:center;gap:4px">
+              <span>🛡️ 预估强平价与缓冲:</span>
+              <strong id="qo-est-liq-price" style="color:var(--text-0)">--</strong>
+            </span>
+            <span id="qo-liq-buffer-text" style="font-weight:700;color:var(--green)">--</span>
+          </div>
+          <div class="qo-liq-bar-bg">
+            <div id="qo-liq-bar-fill" class="qo-liq-bar-fill" style="width:80%;background:var(--green)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Margin / Position Sizing -->
+      <div class="qo-field-group">
+        <div class="qo-label-row">
+          <span class="qo-label">投入保证金 Margin</span>
+          <span class="qo-sub-hint">账户可用: <span id="qo-user-balance">--</span> USDT</span>
+        </div>
+        <div class="qo-pills">
+          <button type="button" class="qo-pill qo-margin-pill" data-margin="10" onclick="setQuickOrderMargin(10)">10U</button>
+          <button type="button" class="qo-pill qo-margin-pill active" data-margin="20" onclick="setQuickOrderMargin(20)">20U</button>
+          <button type="button" class="qo-pill qo-margin-pill" data-margin="50" onclick="setQuickOrderMargin(50)">50U</button>
+          <button type="button" class="qo-pill qo-margin-pill" data-margin="100" onclick="setQuickOrderMargin(100)">100U</button>
+          <button type="button" class="qo-pill qo-margin-pill" data-margin="200" onclick="setQuickOrderMargin(200)">200U</button>
+        </div>
+        <div class="qo-input-with-unit full" style="margin-top:2px">
+          <input type="number" id="qo-margin-input" min="1" step="any" value="20" placeholder="自定义保证金金额" oninput="onQuickOrderMarginInput(this.value)" />
+          <span class="unit">USDT</span>
+        </div>
+      </div>
+
+      <!-- Realtime Calculation & SL/TP -->
+      <div class="qo-calc-card">
+        <div class="qo-calc-row">
+          <span>名义价值 (Notional)</span>
+          <strong id="qo-calc-notional">-- USDT</strong>
+        </div>
+        <div class="qo-calc-row">
+          <span>预估开仓量 (Qty)</span>
+          <strong id="qo-calc-qty">--</strong>
+        </div>
+        <div class="qo-calc-row qo-protect-row">
+          <span>止损价 (SL)</span>
+          <input type="number" id="qo-sl-input" step="any" style="width:115px;text-align:right;background:var(--bg-0);border:1px solid var(--border);border-radius:4px;color:var(--red);font-weight:700;padding:2px 6px;font-size:11px" oninput="onQuickOrderSlTpChange()" placeholder="选填 自动带入" />
+        </div>
+        <div class="qo-calc-row qo-protect-row">
+          <span>止盈价 (TP)</span>
+          <input type="number" id="qo-tp-input" step="any" style="width:115px;text-align:right;background:var(--bg-0);border:1px solid var(--border);border-radius:4px;color:var(--green);font-weight:700;padding:2px 6px;font-size:11px" oninput="onQuickOrderSlTpChange()" placeholder="选填 自动带入" />
+        </div>
+        <div class="qo-calc-row">
+          <span>预计止损风险 (Est. Loss)</span>
+          <span id="qo-calc-risk" style="color:var(--red);font-weight:600">--</span>
+        </div>
+        <div class="qo-calc-row">
+          <span>盈亏比测算 (Risk/Reward)</span>
+          <span id="qo-rr-ratio" class="qo-rr-ratio-badge">--</span>
+        </div>
+      </div>
+
+      <div id="qo-error-msg" class="qo-error-msg" style="display:none"></div>
+    </div>
+
+    <div class="qo-foot">
+      <div class="qo-btn-row">
+        <button type="button" class="qo-btn-cancel" onclick="closeQuickOrderModal()">取消</button>
+        <button type="button" class="qo-btn-submit long" id="qo-submit-btn" onclick="submitQuickOrder()">
+          🚀 确认开仓
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Emergency Kill Switch Modal -->
+<div id="emergency-kill-overlay" class="safety-modal-overlay" style="display:none" onclick="if(event.target===this)closeEmergencyKillModal()">
+  <div class="safety-modal-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid rgba(239,68,68,0.3);padding-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:22px">🚨</span>
+        <strong style="font-size:15px;color:#f87171">系统执行层紧急急停 (Kill Switch)</strong>
+      </div>
+      <button type="button" onclick="closeEmergencyKillModal()" style="background:transparent;border:none;color:#94a3b8;font-size:16px;cursor:pointer">✕</button>
+    </div>
+
+    <p style="font-size:12px;color:#cbd5e1;line-height:1.6;margin-bottom:16px">
+      紧急急停将<strong>瞬间强制关闭自动交易</strong>并<strong>激活底层硬风控锁</strong>，防止任何新订单发出。<br>请选择需要执行的处置级别：
+    </p>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+      <button type="button" onclick="executeEmergencyKill('cancel_and_flatten')" style="background:linear-gradient(135deg,#dc2626,#991b1b);border:1px solid #ef4444;color:#fff;padding:12px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:4px">
+        <span>💥 彻底清仓避险: 撤销所有挂单 + 市价全平全部持仓</span>
+        <small style="font-size:10px;opacity:0.85;font-weight:400">并发取消限价单与Algo条件单，同时以市价紧急平掉全部开仓持仓</small>
+      </button>
+
+      <button type="button" onclick="executeEmergencyKill('cancel_only')" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;padding:12px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:4px">
+        <span>🛑 仅撤单停机: 撤销所有挂单 + 保持现有持仓 + 锁死开仓</span>
+        <small style="font-size:10px;opacity:0.85;font-weight:400">撤销全部未成交挂单，现有持仓保留，彻底禁止新开仓</small>
+      </button>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end">
+      <button type="button" class="btn-sm" onclick="closeEmergencyKillModal()" style="padding:6px 16px">取消操作</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reconciliation & Circuit Breaker Details Modal -->
+<div id="reconciliation-modal-overlay" class="safety-modal-overlay" style="display:none" onclick="if(event.target===this)closeReconciliationModal()">
+  <div class="safety-modal-box" style="border-color:rgba(56,189,248,0.45);box-shadow:0 20px 60px rgba(0,0,0,0.8),0 0 24px rgba(56,189,248,0.2)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:10px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:20px">🛡️</span>
+        <strong style="font-size:14px;color:#38bdf8">风控熔断器与持仓对账状态看板</strong>
+      </div>
+      <button type="button" onclick="closeReconciliationModal()" style="background:transparent;border:none;color:#94a3b8;font-size:16px;cursor:pointer">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px">
+        <div style="font-size:11px;color:#94a3b8">数据熔断状态</div>
+        <div style="font-size:13px;font-weight:700;margin-top:2px" id="modal-cb-status">正常</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px" id="modal-cb-reason">--</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px">
+        <div style="font-size:11px;color:#94a3b8">持仓对账状态</div>
+        <div style="font-size:13px;font-weight:700;margin-top:2px;color:#10b981" id="modal-recon-status">对账一致 (OK)</div>
+        <div style="font-size:10px;color:#64748b;margin-top:2px" id="modal-recon-time">每 25 秒自动守护</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:6px">对账差异详情 (本地状态 vs 交易所真实持仓)</div>
+      <div id="modal-recon-discrepancies" style="max-height:130px;overflow-y:auto;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:6px;padding:8px;font-size:11px;color:#94a3b8">
+        暂无任何持仓对账差异，本地止盈止损保护单与交易所真实仓位 100% 同步。
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <button type="button" class="btn-sm" onclick="runManualReconciliation()" id="btn-manual-reconcile" style="background:#2563eb;color:#fff;border-color:#3b82f6;padding:6px 14px;font-weight:600">
+        🔄 立即手动对账一次
+      </button>
+      <button type="button" class="btn-sm" onclick="closeReconciliationModal()" style="padding:6px 14px">关闭</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Global Command Palette Modal (Ctrl+K) -->
+<div class="cmd-palette-overlay" id="cmd-palette-overlay" onclick="onCommandPaletteOverlayClick(event)" role="dialog" aria-modal="true" aria-label="快捷指令面板">
+  <div class="cmd-palette-dialog">
+    <div class="cmd-search-bar">
+      <span class="cmd-search-icon" aria-hidden="true">⌘</span>
+      <input type="text" id="cmd-palette-input" class="cmd-search-input" placeholder="输入合约代码 (如 BTC / SOL)、周期 (15m / 4h) 或功能指令..." autocomplete="off" oninput="cmdSelectedIndex=0; renderCommandPaletteList()" />
+      <kbd class="cmd-trigger-kbd">ESC</kbd>
+    </div>
+    <div class="cmd-results" id="cmd-palette-results"></div>
+    <div class="cmd-footer">
+      <span>⚡ Aether Quant Studio · 极客导航中枢</span>
+      <div class="cmd-footer-keys">
+        <span><kbd>↑</kbd> <kbd>↓</kbd> 选择</span>
+        <span><kbd>↵</kbd> 执行</span>
+        <span><kbd>F</kbd> 全屏</span>
+        <span><kbd>D</kbd> 明暗</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script defer src="/static/js/01-core-i18n-theme.js"></script>
+  <script defer src="/static/js/02-chart-and-indicators.js"></script>
+  <script defer src="/static/js/03-ws-orders-diagnostics.js"></script>
+  <script defer src="/static/js/04-blog-and-settings.js"></script>
+  <script defer src="/static/js/05-obsidian-and-runtime.js"></script>
+  <script defer src="/static/js/06-command-palette.js"></script>
+</body>
+</html>

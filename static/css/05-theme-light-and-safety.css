@@ -1,0 +1,601 @@
+/* ========================================================
+   白色简约模式顶级精致质感优化 (Premium Light Theme Overhaul)
+   彻底清除死灰、暗淡发虚与残留黑斑，提升对比度与专业度
+   ======================================================== */
+body.theme-light {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* 1. 顶部 Header 状态栏 */
+body.theme-light .header {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+body.theme-light #htf-label {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+body.theme-light .control-capsule {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+body.theme-light .auto-badge.off {
+  background: #ffffff !important;
+  color: #475569 !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+body.theme-light .auto-badge.off:hover {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+}
+body.theme-light .auto-badge.on {
+  background: #dcfce7 !important;
+  color: #047857 !important;
+  border-color: #86efac !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.2) !important;
+}
+body.theme-light .auto-badge.typesafe-on {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(14, 165, 233, 0.2) !important;
+}
+body.theme-light .reports-hub-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+body.theme-light .reports-hub-btn:hover {
+  background: #f8fafc !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+}
+body.theme-light .reports-dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12) !important;
+}
+body.theme-light .rep-menu-item:hover {
+  background: #f1f5f9 !important;
+}
+body.theme-light .rep-text strong {
+  color: #0f172a !important;
+}
+body.theme-light .rep-text small {
+  color: #64748b !important;
+}
+body.theme-light #evo-quick-btn {
+  background: #f5f3ff !important;
+  border: 1px solid #c4b5fd !important;
+  color: #6d28d9 !important;
+  font-weight: 700 !important;
+}
+body.theme-light #evo-quick-btn:hover {
+  background: #ede9fe !important;
+  border-color: #a78bfa !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2) !important;
+}
+body.theme-light #obsidian-btn {
+  background: #f5f3ff !important;
+  border: 1px solid #ddd6fe !important;
+  color: #6d28d9 !important;
+  font-weight: 700 !important;
+}
+body.theme-light .settings-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+body.theme-light .settings-btn:hover {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+}
+
+/* 2. 第二行统计卡片条 (Stats Bar) */
+body.theme-light .stats-bar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 6px 14px !important;
+  gap: 8px !important;
+}
+body.theme-light .stat {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 5px 12px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.18s ease !important;
+}
+body.theme-light .stat:hover {
+  background: #ffffff !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12) !important;
+  transform: translateY(-1px) !important;
+}
+body.theme-light .stat .label {
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+body.theme-light .stat .val {
+  color: #0f172a !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+body.theme-light .stat-divider {
+  display: none !important;
+}
+
+/* 3. 第三行核心指标大卡片 (Metric Strip) */
+body.theme-light .metric-strip {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 8px 14px !important;
+  gap: 10px !important;
+}
+body.theme-light .metric-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+body.theme-light .metric-card:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 6px 18px rgba(56, 189, 248, 0.14) !important;
+  transform: translateY(-2px) !important;
+}
+body.theme-light .metric-card.accent {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, #ffffff 100%) !important;
+  border: 1px solid #86efac !important;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.12) !important;
+}
+body.theme-light .metric-card .eyebrow {
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+body.theme-light .metric-card .metric-value {
+  color: #0f172a !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  margin: 3px 0 !important;
+}
+body.theme-light .metric-card .metric-sub {
+  color: #334155 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+/* 4. 图表工具栏 (Chart Toolbar) - 彻底消灭黑色斑块与死灰 */
+body.theme-light .chart-toolbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  gap: 6px !important;
+}
+body.theme-light .chart-toolbar select,
+body.theme-light #symbol-select,
+body.theme-light #interval-select {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  outline: none !important;
+}
+body.theme-light .chart-toolbar select:hover,
+body.theme-light #symbol-select:hover,
+body.theme-light #interval-select:hover {
+  border-color: #2563eb !important;
+}
+body.theme-light .chart-toolbar select:focus,
+body.theme-light #symbol-select:focus,
+body.theme-light #interval-select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* 周期切换按钮 */
+body.theme-light .chart-timeframes {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+}
+body.theme-light .chart-timeframe {
+  color: #334155 !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  padding: 3px 8px !important;
+  background: transparent !important;
+}
+body.theme-light .chart-timeframe:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+body.theme-light .chart-timeframe.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* 视图模式按钮 (单币/持仓/权益/动能) */
+body.theme-light .view-toggle {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+}
+body.theme-light .view-toggle button {
+  background: transparent !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  padding: 3px 8px !important;
+}
+body.theme-light .view-toggle button:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+body.theme-light .view-toggle button.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* 常用小按钮 (刷新、全屏、布局等) */
+body.theme-light .chart-toolbar .btn-sm,
+body.theme-light .layout-preset-btn,
+body.theme-light .chart-fullscreen-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+body.theme-light .chart-toolbar .btn-sm:hover,
+body.theme-light .layout-preset-btn:hover,
+body.theme-light .chart-fullscreen-btn:hover {
+  background: #f8fafc !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+}
+body.theme-light .layout-preset-btn.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #2563eb !important;
+}
+body.theme-light #chart-obsidian-snapshot-btn {
+  background: #f5f3ff !important;
+  border: 1px solid #c4b5fd !important;
+  color: #6d28d9 !important;
+  font-weight: 700 !important;
+}
+body.theme-light .chart-tool-icon {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  border-radius: 6px !important;
+}
+body.theme-light .chart-tool-icon:hover {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #2563eb !important;
+}
+
+/* 5. 副图指标与线条控制条 (Chart Line Controls) */
+body.theme-light .chart-line-controls {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 6px 14px !important;
+}
+body.theme-light .chart-line-controls .line-control-title {
+  color: #475569 !important;
+  font-weight: 700 !important;
+}
+body.theme-light .chart-line-controls label {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+  padding: 2px 8px !important;
+  transition: all 0.15s ease !important;
+}
+body.theme-light .chart-line-controls label:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+body.theme-light .chart-line-controls label:has(input:checked) {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.12) !important;
+}
+body.theme-light .btn-sub-ind {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  font-weight: 600 !important;
+  border-radius: 5px !important;
+  padding: 3px 9px !important;
+}
+body.theme-light .btn-sub-ind:hover {
+  background: #eff6ff !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+}
+body.theme-light .btn-sub-ind.active {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(37, 99, 235, 0.25) !important;
+}
+
+/* 6. 右侧面板 Tabs 与内容区 (Side Panel) */
+body.theme-light .side-panel {
+  background: #ffffff !important;
+  border-left: 1px solid #e2e8f0 !important;
+}
+body.theme-light .side-tabs {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 0 6px !important;
+}
+body.theme-light .side-tab {
+  color: #475569 !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid transparent !important;
+  padding: 8px 10px !important;
+  transition: all 0.15s ease !important;
+}
+body.theme-light .side-tab:hover {
+  color: #0f172a !important;
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+body.theme-light .side-tab.active {
+  color: #2563eb !important;
+  font-weight: 700 !important;
+  border-bottom-color: #2563eb !important;
+  background: #ffffff !important;
+}
+body.theme-light .smart-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+body.theme-light .smart-title {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+body.theme-light .smart-reason {
+  color: #475569 !important;
+}
+body.theme-light .ind-item {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+body.theme-light .ind-name {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+body.theme-light .ind-val {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* 7. 底部面板 Tabs 与内容区 (Bottom Panel) */
+body.theme-light .bottom-panel {
+  background: #ffffff !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
+body.theme-light .bottom-tabs {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 0 10px !important;
+}
+body.theme-light .bottom-tab {
+  color: #475569 !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid transparent !important;
+  padding: 8px 12px !important;
+}
+body.theme-light .bottom-tab:hover {
+  color: #0f172a !important;
+}
+body.theme-light .bottom-tab.active {
+  color: #2563eb !important;
+  font-weight: 700 !important;
+  border-bottom-color: #2563eb !important;
+  background: #ffffff !important;
+}
+body.theme-light .tab-action-bar {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+body.theme-light .tab-action-btn,
+body.theme-light .tab-filter-select {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+body.theme-light .diag-hud-card {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 8px !important;
+}
+body.theme-light .diag-hud-label {
+  color: #475569 !important;
+}
+body.theme-light .diag-hud-val {
+  color: #0f172a !important;
+}
+body.theme-light .diag-hud-sub {
+  color: #64748b !important;
+}
+
+
+
+/* 8. 紧急急停按钮 (Emergency Kill Switch) - 浅色模式专属顶级质感 */
+body.theme-light .emergency-kill-badge {
+  background: #fef2f2 !important;
+  border: 1px solid #fca5a5 !important;
+  color: #b91c1c !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.12) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+body.theme-light .emergency-kill-badge:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  color: #991b1b !important;
+  box-shadow: 0 3px 10px rgba(239, 68, 68, 0.22) !important;
+  transform: translateY(-1px) !important;
+}
+body.theme-light .emergency-kill-badge.active-kill {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #b91c1c !important;
+  box-shadow: 0 0 14px rgba(220, 38, 38, 0.45) !important;
+  animation: killPulseLight 1.2s infinite alternate !important;
+}
+@keyframes killPulseLight {
+  from { box-shadow: 0 0 4px rgba(220, 38, 38, 0.3); }
+  to { box-shadow: 0 0 16px rgba(220, 38, 38, 0.6); }
+}
+
+/* 9. 交易模式分级胶囊与下拉面板 (Trading Mode Tier Capsule) */
+body.theme-light .trading-mode-capsule {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.18s ease !important;
+}
+body.theme-light .trading-mode-capsule:hover {
+  background: #f8fafc !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12) !important;
+}
+body.theme-light .mode-dropdown-menu {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14) !important;
+}
+body.theme-light .mode-menu-item {
+  color: #334155 !important;
+  transition: all 0.15s ease !important;
+}
+body.theme-light .mode-menu-item:hover {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+}
+body.theme-light .mode-menu-item strong {
+  color: #0f172a !important;
+}
+body.theme-light .mode-menu-item small {
+  color: #64748b !important;
+}
+
+/* 10. 熔断指示器 (Circuit Breaker Indicator) */
+body.theme-light .circuit-breaker-badge {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  font-weight: 700 !important;
+  transition: all 0.18s ease !important;
+}
+body.theme-light .circuit-breaker-badge.safe {
+  background: #ecfdf5 !important;
+  border: 1px solid #86efac !important;
+  color: #047857 !important;
+}
+body.theme-light .circuit-breaker-badge.safe:hover {
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15) !important;
+}
+body.theme-light .circuit-breaker-badge.tripped {
+  background: #fef2f2 !important;
+  border: 1px solid #f87171 !important;
+  color: #dc2626 !important;
+  animation: killPulseLight 1.2s infinite alternate !important;
+}
+
+/* 11. 对账与硬风控弹窗 (Reconciliation & Risk Modals) */
+body.theme-light .reconciliation-modal-card {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18) !important;
+}
+body.theme-light .recon-metric-box {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+}
+body.theme-light .recon-metric-label {
+  color: #475569 !important;
+}
+body.theme-light .recon-metric-val {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+}
+
+/* 12. 数据表格与列表 (Tables, Rows & Cells in Light Theme) */
+body.theme-light table th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  font-weight: 700 !important;
+}
+body.theme-light table td {
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #1e293b !important;
+}
+body.theme-light table tr:hover td {
+  background: #f8fafc !important;
+}
+body.theme-light .chart-data-table th,
+body.theme-light .trades-data-table th {
+  background: #f8fafc !important;
+  color: #334155 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+body.theme-light .chart-data-table td,
+body.theme-light .trades-data-table td {
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #0f172a !important;
+}
+body.theme-light .chart-data-table tr:hover td,
+body.theme-light .trades-data-table tr:hover td {
+  background: #eff6ff !important;
+}
+
+

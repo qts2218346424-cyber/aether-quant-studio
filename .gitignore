@@ -1,0 +1,59 @@
+# ==========================================================
+# Aether Quant Studio · Security & Runtime GitIgnore Rules
+# ==========================================================
+
+# 1. Credentials & Local Secrets (NEVER COMMIT!)
+config.json
+*.secret
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+!config.example.json
+
+# 2. Local Trading Data, Historical Caches & Generated Media
+data/
+logs/
+reports/
+artifacts/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.lock
+
+# 3. Local Backups & Historical Archives
+.archive/
+*.bak
+*.bak*
+*.orig
+*.tmp
+
+# 4. Local AI / IDE / Agent Harness Directories
+.agents/
+.claude/
+.superpowers/
+.playwright-mcp/
+.vscode/
+.idea/
+
+# 5. Python & Node Bytecode / Build Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+.venv/
+venv/
+ENV/
+node_modules/
+
+# 6. OS Metadata
+.DS_Store
+Thumbs.db
+desktop.ini

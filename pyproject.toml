@@ -1,0 +1,36 @@
+[project]
+name = "aether-quant-studio"
+version = "2.0.0"
+description = "Aether Quant Studio · 苍穹量枢 — 个人量化玩具与币安合约多策略智能终端"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [
+    ".",
+    "src",
+    "src/core",
+    "src/strategies",
+    "src/ai",
+    "src/integrations",
+    "src/api",
+    "src/desktop",
+    "scripts",
+]
+norecursedirs = [
+    ".git",
+    ".archive",
+    ".agents",
+    ".claude",
+    ".playwright-mcp",
+    ".superpowers",
+    "__pycache__",
+    "data",
+    "logs",
+    "reports",
+    "artifacts",
+    "node_modules",
+]
+addopts = "-ra"

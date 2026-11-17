@@ -1,0 +1,255 @@
+{
+  "api_key": "",
+  "api_secret": "",
+  "base_url": "https://fapi.binance.com",
+  "ws_url": "wss://fstream.binance.com",
+  "proxy": "",
+  "symbols": [],
+  "live_trading_enabled": false,
+  "paper_trading": true,
+  "leverage": 6,
+  "interval": "15m",
+  "strategy": {
+    "avoid_hours": [
+      1,
+      2,
+      11,
+      12,
+      20,
+      23
+    ],
+    "disabled_factors": [],
+    "factor_weights": {
+      "breakout": 25
+    },
+    "signal_threshold": 45,
+    "scan_threshold": 45,
+    "long_threshold": 55,
+    "short_threshold": 50,
+    "blacklist": [
+      "TAGUSDT",
+      "NIGHTUSDT",
+      "ERAUSDT",
+      "BANKUSDT",
+      "BLESSUSDT"
+    ],
+    "require_htf_align": true,
+    "smart_money": {
+      "enabled": true,
+      "score_weight": 18,
+      "min_alignment_score": 18,
+      "block_opposite_score": 32,
+      "require_confirmation": false,
+      "scan_limit": 8
+    },
+    "liquidity": {
+      "enabled": true,
+      "min_quote_volume_24h": 3000000,
+      "max_spread_bps": 8
+    },
+    "position_management": {
+      "reduce_confidence": 75,
+      "full_exit_confidence": 80,
+      "partial_close_pct": 50,
+      "trailing_atr": 1.5,
+      "lock_profit_atr": 0.4,
+      "exit_score_threshold": 5,
+      "require_htf_reversal": true,
+      "holding_mode": "swing",
+      "swing_interval": "1h",
+      "initial_stop_atr": 2.5,
+      "min_stop_pct": 2.2,
+      "hard_stop_pct": 6,
+      "low_score_hard_stop_pct": 3.5,
+      "stop_confirmation_candles": 2,
+      "require_swing_reversal": true,
+      "trail_after_tp": 1,
+      "tp1_atr": 2,
+      "tp2_atr": 4,
+      "swing_max_leverage": 6,
+      "max_entry_margin_pct": 25,
+      "max_margin_loss_pct": 45,
+      "breakout_fail_exit": true,
+      "breakout_fail_count": 2,
+      "short_early_stop_enabled": true,
+      "short_early_stop_minutes": 30,
+      "short_early_stop_pct": 2.5,
+      "long_track": {
+        "enabled": true,
+        "max_long_slots": 1,
+        "tp1_close_pct": 30,
+        "trail_atr_swing": 3,
+        "reversal_confirm_bars": 2,
+        "hard_stop_pct": 6
+      }
+    },
+    "market_selection": {
+      "enabled": true,
+      "max_price": 250000,
+      "min_atr_pct": 1.2,
+      "max_atr_pct": 8,
+      "min_vol_surge": 0.2,
+      "volatile_loss_count": 2,
+      "volatile_pause_sec": 3600,
+      "allow_all_symbols": true,
+      "candidate_scan_limit": 150
+    },
+    "add_on_pullback": {
+      "enabled": true,
+      "pullback_pct": 2.5,
+      "add_ratio": 0.5,
+      "max_adds": 3,
+      "breakeven_pct": 2,
+      "tp1_pct": 5,
+      "tp2_pct": 8,
+      "tp_ratio": 0.333,
+      "trail_atr": 2
+    },
+    "grid": {
+      "enabled": true,
+      "min_atr_pct": 1,
+      "max_abs_change_1h": 1.5,
+      "spacing_atr": 1.2,
+      "rungs_per_side": 2,
+      "leverage": 6,
+      "max_margin_ratio": 0.8,
+      "breakout_atr": 3,
+      "max_grids": 1,
+      "max_price": 10,
+      "min_rung_notional": 10
+    },
+    "profit_bet": {
+      "enabled": true,
+      "allocation_pct": 25,
+      "min_daily_net_profit_u": 0.2,
+      "min_atr_pct": 1,
+      "leverage": 6,
+      "stop_atr": 1.5,
+      "min_stop_pct": 1.2,
+      "max_stop_pct": 3,
+      "max_wallet_risk_pct": 3,
+      "max_notional_multiple": 1.5,
+      "max_per_day": 1
+    },
+    "candidate_trend_following": {
+      "ema_fast": 8,
+      "ema_slow": 22
+    }
+  },
+  "ai_committee": {
+    "enabled": false,
+    "min_votes": 2,
+    "min_confidence": 65,
+    "require_unanimous": false,
+    "timeout_seconds": 20,
+    "providers": [
+      {
+        "name": "DeepSeek",
+        "role": "mean-reversion and momentum reviewer",
+        "base_url": "https://api.deepseek.com",
+        "model": "deepseek-chat",
+        "api_key_env": "DEEPSEEK_API_KEY",
+        "temperature": 0.1,
+        "json_mode": true,
+        "api_key": ""
+      },
+      {
+        "name": "OpenAI",
+        "role": "trend and regime reviewer",
+        "base_url": "https://api.openai.com/v1",
+        "model": "gpt-4o",
+        "api_key_env": "OPENAI_API_KEY",
+        "temperature": 0.1,
+        "json_mode": true,
+        "api_key": ""
+      },
+      {
+        "name": "Claude",
+        "role": "risk and execution reviewer",
+        "base_url": "https://api.anthropic.com",
+        "model": "claude-3-5-sonnet-latest",
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "temperature": 0.1,
+        "json_mode": false,
+        "api_key": ""
+      }
+    ],
+    "image_generation": {
+      "model": "dall-e-3",
+      "size": "1792x1024",
+      "quality": "standard",
+      "enabled": false,
+      "base_url": "https://api.openai.com/v1",
+      "api_key": ""
+    }
+  },
+  "risk": {
+    "position_size_pct": 15,
+    "entry_margin_multiplier": 1.5,
+    "stop_loss_pct": 1.5,
+    "take_profit_pct": 2.5,
+    "max_daily_loss_pct": 7.5,
+    "max_positions": 3,
+    "max_position_notional_multiple": 6,
+    "max_total_notional_multiple": 8,
+    "symbol_cooldown_sec": 1800,
+    "loss_streak_count": 2,
+    "loss_streak_cooldown_sec": 3600
+  },
+  "entry_decision_mode": "strategy_direct",
+  "typesafe": {
+    "enabled": false,
+    "api_key": "",
+    "api_key_env": "TYPESAFE_API_KEY",
+    "model": "jev-latest",
+    "timeout_seconds": 8,
+    "min_confidence": 0.65,
+    "max_risk_score": 2.5,
+    "min_breakout_score": 1.8,
+    "use_obsidian_playbook": true,
+    "min_playbook_score": 1.5,
+    "max_violation_prob": 0.45,
+    "autonomous_hunter": {
+      "enabled": true,
+      "min_confidence": 0.68,
+      "min_playbook_score": 2.5,
+      "max_risk_score": 2.3,
+      "min_breakout_score": 2,
+      "max_violation_prob": 0.28,
+      "scan_interval_sec": 30
+    }
+  },
+  "square_auto_publish": {
+    "enabled": false,
+    "interval_sec": 3600,
+    "publish_on_start": true,
+    "limit": 5,
+    "candidate_source": "hybrid",
+    "tp_sl_monitor": true,
+    "hot_coins_boost": true,
+    "publish_mode": "post",
+    "share_positions_frequency": "occasional"
+  },
+  "creator_promotion": {
+    "enabled": false,
+    "referral_code": "",
+    "referral_url": "",
+    "copy_trading_url": "",
+    "fee_discount_pct": 20,
+    "custom_hook": "",
+    "red_packet_enabled": false,
+    "red_packet_hook": ""
+  },
+  "execution": {
+    "margin_mode": "ISOLATED",
+    "enforce_margin_mode": true,
+    "min_notional_buffer_pct": 2,
+    "max_notional_overshoot_pct": 18,
+    "maker_first": true,
+    "maker_wait_sec": 8
+  },
+  "obsidian": {
+    "vault_path": "",
+    "auto_sync": false
+  }
+}

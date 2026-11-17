@@ -1,0 +1,366 @@
+/* ==========================================================================
+   Aether Quant Studio · 06-aether-ui-polish.css
+   v2.0 Institutional Visual Refinement, Accessible Tabs & Command Palette
+   ========================================================================== */
+
+/* 1. Brand Emblem & Studio Header Polish */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  user-select: none;
+}
+
+.logo-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 55%, #a855f7 100%);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.38);
+  flex-shrink: 0;
+  -webkit-text-fill-color: initial;
+}
+
+.logo-mark svg {
+  width: 14px;
+  height: 14px;
+  stroke: #ffffff;
+  fill: none;
+}
+
+.logo-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  color: #818cf8;
+  -webkit-text-fill-color: #818cf8;
+}
+
+body.theme-light .logo-badge {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4f46e5;
+  -webkit-text-fill-color: #4f46e5;
+}
+
+/* 2. Command Palette Trigger Capsule (Ctrl+K) */
+.cmd-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.cmd-trigger-btn:hover {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.10);
+  color: var(--text-0);
+  transform: translateY(-1px);
+}
+
+.cmd-trigger-kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-2);
+}
+
+body.theme-light .cmd-trigger-btn {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+body.theme-light .cmd-trigger-btn:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+body.theme-light .cmd-trigger-kbd {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+/* 3. Accessible Single-Row Scrolling Tabs with Non-Color Active Indicator */
+.side-tabs,
+.bottom-tabs {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: none;
+}
+
+.side-tabs::-webkit-scrollbar,
+.bottom-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.side-tab,
+.bottom-tab {
+  position: relative;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  scroll-snap-align: start;
+}
+
+.side-tab.active::after,
+.bottom-tab.active::after {
+  content: "";
+  position: absolute;
+  inset: auto 6px 0 6px;
+  border-block-end: 2px solid var(--blue);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+body.theme-light .side-tab.active::after,
+body.theme-light .bottom-tab.active::after {
+  border-block-end-color: #2563eb;
+}
+
+/* 4. Telemetry Strip & Card Optical Micro-Refinement */
+.metric-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.45), transparent);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.metric-card:hover::before,
+.metric-card.accent::before {
+  opacity: 1;
+}
+
+body.theme-light .metric-card::before {
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.55), transparent);
+}
+
+/* 5. Command Palette Modal (Ctrl+K) */
+.cmd-palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 11vh;
+  background: rgba(5, 8, 18, 0.62);
+  backdrop-filter: blur(8px);
+}
+
+.cmd-palette-overlay.open {
+  display: flex;
+}
+
+body.theme-light .cmd-palette-overlay {
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.cmd-palette-dialog {
+  width: min(580px, 92vw);
+  max-height: 74vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: rgba(13, 19, 34, 0.97);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  overflow: hidden;
+  animation: modalSlideUp 0.16s ease-out;
+}
+
+body.theme-light .cmd-palette-dialog {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+}
+
+.cmd-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cmd-search-icon {
+  font-size: 15px;
+  color: var(--blue);
+  flex-shrink: 0;
+}
+
+.cmd-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-0);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.cmd-search-input::placeholder {
+  color: var(--text-2);
+}
+
+.cmd-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.cmd-group-label {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-2);
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-1);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.cmd-item:hover,
+.cmd-item.selected {
+  background: rgba(56, 189, 248, 0.14);
+  color: var(--text-0);
+}
+
+body.theme-light .cmd-item:hover,
+body.theme-light .cmd-item.selected {
+  background: #eff6ff;
+  color: #0f172a;
+}
+
+.cmd-item-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.cmd-item-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+body.theme-light .cmd-item-icon {
+  background: #f1f5f9;
+}
+
+.cmd-item-title {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmd-item-sub {
+  font-size: 11px;
+  color: var(--text-2);
+  margin-left: 6px;
+}
+
+.cmd-item-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+body.theme-light .cmd-item-hint {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.cmd-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+body.theme-light .cmd-footer {
+  background: #f8fafc;
+}
+
+.cmd-footer-keys {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cmd-footer-keys kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--text-1);
+}
