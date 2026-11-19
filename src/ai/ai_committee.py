@@ -23,6 +23,7 @@ class AICommittee:
         self.require_unanimous = bool(self.cfg.get("require_unanimous", False))
         self.timeout_seconds = float(self.cfg.get("timeout_seconds", 12))
         self.providers = self.cfg.get("providers", []) or []
+        self.ai_routing = self.cfg.get("ai_routing") or {}
         self.proxy = self.cfg.get("proxy") or os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY")
 
     @staticmethod
@@ -182,21 +183,60 @@ class AICommittee:
         if not self.enabled:
             return {"approved": True, "status": "disabled", "candidate": candidate, "votes": [],
                     "reason": "AI committee disabled"}
-        if not self.providers:
+
+        routing_mode = str(self.ai_routing.get("mode", "local_first")).lower()
+        local_cfg = self.ai_routing.get("local_antigravity") or {}
+        use_local = routing_mode in ("local_first", "local_only") and bool(local_cfg.get("enabled", True))
+
+        votes = []
+        async with aiohttp.ClientSession() as session:
+            # 1. 优先尝试本地 Antigravity 桥接网关
+            if use_local:
+                local_provider = {
+                    "name": "Local-Antigravity",
+                    "role": "Chief Quant Reviewer (Local Antigravity Bridge)",
+                    "base_url": str(local_cfg.get("base_url") or "http://127.0.0.1:8045/v1").strip(),
+                    "api_key": str(local_cfg.get("api_key") or "antigravity-local").strip(),
+                    "model": str(local_cfg.get("model") or "gemini-2.5-flash").strip(),
+                }
+                local_vote = await self._call_provider(session, local_provider, context)
+                votes.append(local_vote)
+
+                if local_vote.get("status") == "ok" and routing_mode == "local_only":
+                    approved = (
+                        candidate in {"LONG", "SHORT"}
+                        and local_vote.get("vote") == candidate
+                        and local_vote.get("confidence", 0) >= self.min_confidence
+                    )
+                    return {
+                        "approved": approved,
+                        "status": "approved" if approved else "rejected",
+                        "candidate": candidate,
+                        "votes": votes,
+                        "aligned_votes": 1 if approved else 0,
+                        "valid_votes": 1,
+                        "reason": f"Local Antigravity: {local_vote.get('vote')} ({local_vote.get('confidence')}%)",
+                    }
+
+            # 2. 若需云端 API 兜底或联合投票
+            if routing_mode != "local_only" and self.providers:
+                cloud_votes = await asyncio.gather(*[
+                    self._call_provider(session, provider, context) for provider in self.providers
+                ])
+                votes.extend(cloud_votes)
+
+        if not votes:
             return {"approved": False, "status": "no_providers", "candidate": candidate, "votes": [],
                     "reason": "AI committee has no configured providers"}
-
-        async with aiohttp.ClientSession() as session:
-            votes = await asyncio.gather(*[
-                self._call_provider(session, provider, context) for provider in self.providers
-            ])
 
         valid = [v for v in votes if v.get("status") == "ok"]
         aligned = [v for v in valid if v.get("vote") == candidate and v.get("confidence", 0) >= self.min_confidence]
         directions = {v.get("vote") for v in valid if v.get("vote") != "HOLD"}
+        # 若本地 Antigravity 有效且当前只有一个有效席位（兜底场景），放宽 min_votes 门槛至 1
+        effective_min_votes = 1 if (len(valid) == 1 and valid[0].get("name") == "Local-Antigravity") else self.min_votes
         approved = (
             candidate in {"LONG", "SHORT"}
-            and len(aligned) >= self.min_votes
+            and len(aligned) >= effective_min_votes
             and (not self.require_unanimous or len(aligned) == len(valid))
             and (not directions or directions == {candidate})
         )
@@ -207,7 +247,7 @@ class AICommittee:
             "votes": votes,
             "aligned_votes": len(aligned),
             "valid_votes": len(valid),
-            "reason": f"{len(aligned)}/{self.min_votes} aligned AI votes",
+            "reason": f"{len(aligned)}/{effective_min_votes} aligned AI votes",
         }
 
     async def test_provider(self, provider: dict, api_key: str = "") -> dict:

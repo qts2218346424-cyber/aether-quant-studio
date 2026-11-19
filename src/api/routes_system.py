@@ -14,6 +14,8 @@ from config import load_config, save_config
 from openai_image_client import openai_image_client
 from risk_manager import RiskManager
 from src.api.context import get_trader
+from src.integrations.env_detector import detect_full_environment
+from src.integrations.obsidian_bridge import obsidian_bridge
 from strategy import StrategyEngine
 from typesafe_engine import TypeSafeDecisionEngine
 
@@ -134,8 +136,10 @@ async def update_config(data: dict):
         if t.client._session and not t.client._session.closed:
             asyncio.create_task(t.client._session.close())
 
-    if "ai_committee" in data or "proxy" in data:
+    if "ai_committee" in data or "ai_routing" in data or "proxy" in data:
         ai_cfg = dict(cfg.get("ai_committee", {}) or {})
+        if cfg.get("ai_routing"):
+            ai_cfg["ai_routing"] = cfg.get("ai_routing")
         if "proxy" not in ai_cfg and cfg.get("proxy"):
             ai_cfg["proxy"] = cfg.get("proxy")
         t.ai_committee = AICommittee(ai_cfg)
@@ -244,3 +248,71 @@ async def test_binance_api_endpoint(data: dict):
     finally:
         if client._session and not client._session.closed:
             await client._session.close()
+
+
+@router.get("/api/env/detect")
+async def detect_environment_endpoint():
+    """自动探测本机 Antigravity 网关、Obsidian 知识库列表与代理配置"""
+    return {"ok": True, **detect_full_environment()}
+
+
+@router.post("/api/env/test_antigravity")
+async def test_antigravity_endpoint(data: dict):
+    """测试本地 Antigravity OpenAI 兼容网关连通性"""
+    cfg = load_config()
+    local_cfg = (cfg.get("ai_routing") or {}).get("local_antigravity") or {}
+    base_url = str(data.get("base_url") or local_cfg.get("base_url") or "http://127.0.0.1:8045/v1").strip().rstrip("/")
+    raw_key = str(data.get("api_key") or "").strip()
+    api_key = raw_key if (raw_key and "***" not in raw_key) else (local_cfg.get("api_key") or "antigravity-local")
+    model = str(data.get("model") or local_cfg.get("model") or "gemini-2.5-flash").strip()
+
+    endpoint = base_url if base_url.endswith("/chat/completions") else (f"{base_url}/chat/completions" if base_url.endswith("/v1") else f"{base_url}/v1/chat/completions")
+    start_ts = time.time()
+    try:
+        timeout = aiohttp.ClientTimeout(total=8)
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": "Reply with OK"}],
+            "max_tokens": 12,
+            "temperature": 0,
+        }
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(endpoint, headers=headers, json=payload) as resp:
+                latency = int((time.time() - start_ts) * 1000)
+                text = await resp.text()
+                if resp.status == 200:
+                    return {
+                        "ok": True,
+                        "latency_ms": latency,
+                        "message": f"本地 Antigravity 网关桥接成功！延迟 {latency}ms (模型: {model})",
+                    }
+                return {
+                    "ok": False,
+                    "error": f"网关响应异常 HTTP {resp.status}: {text[:160]}",
+                }
+    except Exception as e:
+        return {"ok": False, "error": f"无法连接本地 Antigravity ({base_url}): {str(e)}"}
+
+
+@router.post("/api/obsidian/configure")
+async def configure_obsidian_endpoint(data: dict):
+    """绑定并初始化本机 Obsidian 知识库路径"""
+    vault_path = str(data.get("vault_path") or "").strip()
+    auto_sync = bool(data.get("auto_sync", True))
+    init_templates = bool(data.get("init_templates", True))
+
+    if not vault_path:
+        return {"ok": False, "error": "请提供有效的 Obsidian 知识库文件夹路径"}
+
+    res = obsidian_bridge.set_vault_path(vault_path, auto_sync=auto_sync)
+    if init_templates:
+        try:
+            obsidian_bridge.init_templates(overwrite=False)
+            obsidian_bridge.compile_vault()
+        except Exception:
+            pass
+    return res

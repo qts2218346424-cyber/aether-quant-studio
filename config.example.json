@@ -248,8 +248,17 @@
     "maker_first": true,
     "maker_wait_sec": 8
   },
+  "ai_routing": {
+    "mode": "local_first",
+    "local_antigravity": {
+      "enabled": true,
+      "base_url": "http://127.0.0.1:8045/v1",
+      "api_key": "",
+      "model": "gemini-2.5-flash"
+    }
+  },
   "obsidian": {
     "vault_path": "",
-    "auto_sync": false
+    "auto_sync": true
   }
 }

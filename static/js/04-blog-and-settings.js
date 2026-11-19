@@ -2440,9 +2440,18 @@ async function selectPreset(key) {
 
 async function openSettings() {
   try {
-    const response = await fetch('/api/config');
+    const [response, envResponse] = await Promise.all([
+      fetch('/api/config'),
+      fetch('/api/env/detect').catch(() => null),
+    ]);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     settingsConfig = await response.json();
+    const envDetect = envResponse && envResponse.ok ? await envResponse.json() : {};
+    const agInfo = envDetect.antigravity || {};
+    const aiRouting = settingsConfig.ai_routing || envDetect.ai_routing || {};
+    const localAg = aiRouting.local_antigravity || {};
+    const obsInfo = envDetect.obsidian || {};
+    const obsVaults = obsInfo.vaults || [];
     const strategy = settingsConfig.strategy || {};
     const selection = strategy.market_selection || {};
     const liquidity = strategy.liquidity || {};
@@ -2555,6 +2564,79 @@ async function openSettings() {
                 <button type="button" id="btn-test-binance-api" onclick="testBinanceApiConnection()" style="background:linear-gradient(90deg,#F0B90B,#D97706);color:#0F172A;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;">
                   ⚡ 测试 API 连通性与账户权限
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 0.1 AI 双轨桥接：本地 Antigravity 优先 + 云端 API 兜底 -->
+          <div class="settings-section" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.32);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+              <span style="color:#34D399;font-weight:700;font-size:13px;">⚡ AI 双轨桥接 (本地 Antigravity 优先 + 云端 API)</span>
+              <span id="ag-detect-badge" style="font-size:11px;font-weight:600;color:${agInfo.gateway_online ? '#4ADE80' : '#FBBF24'};">
+                ${agInfo.gateway_online ? `🟢 检测到本地网关 (${escapeHtml(agInfo.gateway_url || '127.0.0.1:8045')})` : '🟡 未检测到本地网关 (将使用云端 API 兜底)'}${agInfo.agy_cli_available ? ' · agy CLI 就绪' : ''}
+              </span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
+              <div class="settings-field">
+                <label>智能路由策略</label>
+                <select id="set-ai-routing-mode" style="background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:12px;">
+                  <option value="local_first" ${(aiRouting.mode || 'local_first') === 'local_first' ? 'selected' : ''}>优先本地 Antigravity + 云端 API 兜底 (推荐)</option>
+                  <option value="local_only" ${aiRouting.mode === 'local_only' ? 'selected' : ''}>仅使用本地 Antigravity 网关</option>
+                  <option value="cloud_only" ${aiRouting.mode === 'cloud_only' ? 'selected' : ''}>仅使用下方云端 API 投委会</option>
+                </select>
+              </div>
+              <div class="settings-field">
+                <label>本地 Antigravity 网关地址</label>
+                <input id="set-local-ag-url" value="${escapeHtml(localAg.base_url || agInfo.gateway_url || 'http://127.0.0.1:8045/v1')}" placeholder="http://127.0.0.1:8045/v1" style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+              </div>
+              <div class="settings-field">
+                <label>本地首选模型 (Model)</label>
+                <input id="set-local-ag-model" list="local-ag-models-list" value="${escapeHtml(localAg.model || (agInfo.models && agInfo.models[0]) || 'gemini-2.5-flash')}" placeholder="gemini-2.5-flash" style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                <datalist id="local-ag-models-list">
+                  ${(agInfo.models || []).map(m => `<option value="${escapeHtml(m)}">`).join('')}
+                </datalist>
+              </div>
+              <div class="settings-field">
+                <label>本地网关密钥 (可选，无密码留空)</label>
+                <input id="set-local-ag-key" type="password" placeholder="${localAg.api_key ? '已保存，留空不变' : '默认无需填写或输入网关 Token'}" style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button type="button" onclick="refreshEnvDetection()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid var(--border);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">🔍 重新自动检测本机环境</button>
+                <button type="button" id="btn-test-local-ag" onclick="testLocalAntigravity()" style="background:#10B981;color:#0F172A;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">⚡ 测试本地 Antigravity 桥接</button>
+              </div>
+              <span id="local-ag-test-status" style="font-size:11px;font-weight:600;"></span>
+            </div>
+          </div>
+
+          <!-- 0.2 电脑本地 Obsidian 知识库自动检测与配置 -->
+          <div class="settings-section" style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.32);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+              <span style="color:#C084FC;font-weight:700;font-size:13px;">📚 电脑本地 Obsidian 知识库配置 (自动检测)</span>
+              <span style="font-size:11px;color:var(--text-2);">已发现 ${obsVaults.length} 个本地知识库</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div class="settings-field">
+                <label>快速选择本机已检测到的 Obsidian 仓库</label>
+                <select id="set-obsidian-select" onchange="onSelectDetectedVault(this.value)" style="background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:12px;">
+                  <option value="">-- 请选择本机仓库 (或下方手动输入路径) --</option>
+                  ${obsVaults.map(v => `<option value="${escapeHtml(v.path)}" ${(obsInfo.configured_path === v.path) ? 'selected' : ''}>${escapeHtml(v.name)} (${escapeHtml(v.path)})${v.is_open ? ' [当前打开]' : ''}${v.has_templates ? ' [已就绪]' : ''}</option>`).join('')}
+                </select>
+              </div>
+              <div class="settings-field">
+                <label>当前知识库本地路径 (Vault Path)</label>
+                <div style="display:flex;gap:8px;">
+                  <input id="set-obsidian-path" value="${escapeHtml(obsInfo.configured_path || (settingsConfig.obsidian && settingsConfig.obsidian.vault_path) || '')}" placeholder="例如: D:\\Obsidian\\量化知识库 (留空自动识别)" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                  <button type="button" id="btn-bind-obsidian" onclick="bindAndInitObsidian()" style="background:#8B5CF6;color:#fff;border:none;padding:0 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">📂 绑定并初始化模板</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-1);cursor:pointer;">
+                  <input type="checkbox" id="set-obsidian-autosync" ${(obsInfo.auto_sync !== false) ? 'checked' : ''}>
+                  <span>交易复盘与策略笔记自动双向同步至 Obsidian</span>
+                </label>
+                <span id="obsidian-bind-status" style="font-size:11px;font-weight:600;"></span>
               </div>
             </div>
           </div>
@@ -2895,6 +2977,24 @@ async function saveSettings() {
       execution: {...(config.execution || {}), margin_mode: document.getElementById('set-isolated-margin').checked ? 'ISOLATED' : 'CROSSED', enforce_margin_mode: true, min_notional_buffer_pct: Number(document.getElementById('set-min-notional-buffer').value), max_notional_overshoot_pct: Number(document.getElementById('set-max-notional-overshoot').value)},
       risk: {...(config.risk || {}), position_size_pct: Number(document.getElementById('set-position-size').value), max_positions: Number(document.getElementById('set-max-pos').value), max_daily_loss_pct: Number(document.getElementById('set-max-daily-loss').value)},
       ai_committee: {...(config.ai_committee || {}), enabled: isAiCommitteeEnabled, providers, image_generation: imageGenPayload},
+      ai_routing: {
+        mode: (document.getElementById('set-ai-routing-mode')?.value || 'local_first').trim(),
+        local_antigravity: {
+          ...((config.ai_routing && config.ai_routing.local_antigravity) || {}),
+          enabled: true,
+          base_url: (document.getElementById('set-local-ag-url')?.value || 'http://127.0.0.1:8045/v1').trim(),
+          model: (document.getElementById('set-local-ag-model')?.value || 'gemini-2.5-flash').trim(),
+          ...((() => {
+            const k = (document.getElementById('set-local-ag-key')?.value || '').trim();
+            return (k && !k.includes('***')) ? { api_key: k } : {};
+          })()),
+        },
+      },
+      obsidian: {
+        ...(config.obsidian || {}),
+        vault_path: (document.getElementById('set-obsidian-path')?.value || '').trim(),
+        auto_sync: Boolean(document.getElementById('set-obsidian-autosync')?.checked),
+      },
       typesafe: typesafePayload,
     };
     if (binanceKey && !binanceKey.includes('***')) payload.api_key = binanceKey;
@@ -2910,6 +3010,130 @@ async function saveSettings() {
      status.textContent = tr('saveFailed') + error.message;
     status.style.color = 'var(--red)';
     button.disabled = false;
+  }
+}
+
+function onSelectDetectedVault(pathVal) {
+  const input = document.getElementById('set-obsidian-path');
+  if (input && pathVal) {
+    input.value = pathVal;
+  }
+}
+
+async function bindAndInitObsidian() {
+  const pathInput = document.getElementById('set-obsidian-path');
+  const autoSync = document.getElementById('set-obsidian-autosync');
+  const status = document.getElementById('obsidian-bind-status');
+  const btn = document.getElementById('btn-bind-obsidian');
+  if (!pathInput || !status || !btn) return;
+
+  const vaultPath = pathInput.value.trim();
+  if (!vaultPath) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ 请先选择或输入 Obsidian 知识库路径';
+    return;
+  }
+
+  btn.disabled = true;
+  status.style.color = 'var(--text-2)';
+  status.textContent = '正在初始化策略与复盘目录结构...';
+
+  try {
+    const res = await fetch('/api/obsidian/configure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        vault_path: vaultPath,
+        auto_sync: Boolean(autoSync?.checked),
+        init_templates: true,
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ 已成功绑定并初始化: ${data.vault_path}`;
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = `❌ ${data.error || '绑定失败'}`;
+    }
+  } catch (err) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ 请求异常: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function refreshEnvDetection() {
+  const badge = document.getElementById('ag-detect-badge');
+  const status = document.getElementById('local-ag-test-status');
+  if (status) {
+    status.style.color = 'var(--text-2)';
+    status.textContent = '正在扫描本机环境...';
+  }
+  try {
+    const res = await fetch('/api/env/detect');
+    const data = await res.json();
+    const ag = data.antigravity || {};
+    if (badge) {
+      badge.style.color = ag.gateway_online ? '#4ADE80' : '#FBBF24';
+      badge.textContent = `${ag.gateway_online ? `🟢 检测到本地网关 (${ag.gateway_url})` : '🟡 未检测到本地网关 (将使用云端 API 兜底)'}${ag.agy_cli_available ? ' · agy CLI 就绪' : ''}`;
+    }
+    const urlInput = document.getElementById('set-local-ag-url');
+    if (urlInput && ag.gateway_url) urlInput.value = ag.gateway_url;
+    const obsSel = document.getElementById('set-obsidian-select');
+    const obsVaults = (data.obsidian && data.obsidian.vaults) || [];
+    if (obsSel) {
+      obsSel.innerHTML = `<option value="">-- 请选择本机仓库 (${obsVaults.length} 个已发现) --</option>` +
+        obsVaults.map(v => `<option value="${escapeHtml(v.path)}">${escapeHtml(v.name)} (${escapeHtml(v.path)})${v.is_open ? ' [当前打开]' : ''}${v.has_templates ? ' [已就绪]' : ''}</option>`).join('');
+    }
+    if (status) {
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ 扫描完成：本地网关${ag.gateway_online ? '在线' : '离线'}，发现 ${obsVaults.length} 个 Obsidian 仓库`;
+    }
+  } catch (err) {
+    if (status) {
+      status.style.color = 'var(--red)';
+      status.textContent = '❌ 扫描失败: ' + err.message;
+    }
+  }
+}
+
+async function testLocalAntigravity() {
+  const urlInput = document.getElementById('set-local-ag-url');
+  const keyInput = document.getElementById('set-local-ag-key');
+  const modelInput = document.getElementById('set-local-ag-model');
+  const status = document.getElementById('local-ag-test-status');
+  const btn = document.getElementById('btn-test-local-ag');
+  if (!status || !btn) return;
+
+  btn.disabled = true;
+  status.style.color = 'var(--text-2)';
+  status.textContent = '正在测试本地 Antigravity 桥接...';
+
+  try {
+    const res = await fetch('/api/env/test_antigravity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base_url: (urlInput?.value || '').trim(),
+        api_key: (keyInput?.value || '').trim(),
+        model: (modelInput?.value || '').trim(),
+      }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ ${data.message}`;
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = `❌ ${data.error || '桥接失败'}`;
+    }
+  } catch (err) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ 请求异常: ' + err.message;
+  } finally {
+    btn.disabled = false;
   }
 }
 
