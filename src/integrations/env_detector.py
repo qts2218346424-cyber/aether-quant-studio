@@ -1,11 +1,10 @@
 """Aether Quant Studio · 本地开发环境与知识库自动探测引擎
 
-负责自动发现本机：
-1. 本地 Antigravity / antigravity-tools OpenAI 兼容网关 (默认 127.0.0.1:8045) 与 agy CLI
-2. 电脑本地已安装的 Obsidian 知识库列表 (读取官方 obsidian.json 与标准文档目录)
-3. 系统网络代理与币安 API 密钥就绪状态
-
-设计目标：零硬编码个人路径，支持任意开发者克隆后开箱自动识别与复刻。
+参照知识库项目 (obsidian-viz) local-agent-bridge 架构：
+1. 自动探测本机 Antigravity 2.0 安装状态 (Antigravity.exe / agy CLI / ~/.gemini/antigravity)
+   及本地 OpenAI 兼容反代网关 (127.0.0.1:8045 等) 实际可用性；
+2. 自动扫描电脑本地已安装的 Obsidian 知识库列表 (读取官方 obsidian.json 与标准文档目录)；
+3. 零硬编码个人路径，支持任意开发者克隆后开箱自动识别与复刻。
 """
 
 from __future__ import annotations
@@ -31,13 +30,34 @@ def _check_tcp_port(host: str, port: int, timeout: float = 0.25) -> bool:
 
 
 def probe_local_antigravity(custom_url: Optional[str] = None) -> Dict[str, Any]:
-    """探测本地 Antigravity 网关、模型列表与 agy CLI 状态"""
-    agy_cli = shutil.which("agy")
-    if not agy_cli:
-        win_agy = Path(os.environ.get("LOCALAPPDATA", "")) / "agy" / "bin" / "agy.exe"
+    """全维度探测本地 Antigravity 客户端、CLI、数据目录与反代网关真实可用性"""
+    local_appdata = os.environ.get("LOCALAPPDATA", "")
+    appdata = os.environ.get("APPDATA", "")
+    user_home = Path.home()
+
+    # 1. 探测本地 Antigravity.exe
+    ag_exe_path = ""
+    if local_appdata:
+        cand_exe = Path(local_appdata) / "Programs" / "antigravity" / "Antigravity.exe"
+        if cand_exe.exists():
+            ag_exe_path = str(cand_exe)
+
+    # 2. 探测 agy CLI
+    agy_cli = shutil.which("agy") or ""
+    if not agy_cli and local_appdata:
+        win_agy = Path(local_appdata) / "agy" / "bin" / "agy.exe"
         if win_agy.exists():
             agy_cli = str(win_agy)
+    if not agy_cli and appdata:
+        npm_agy = Path(appdata) / "npm" / "agy.cmd"
+        if npm_agy.exists():
+            agy_cli = str(npm_agy)
 
+    # 3. 探测 ~/.gemini/antigravity 工作区目录
+    gemini_dir = user_home / ".gemini" / "antigravity"
+    data_dir_exists = gemini_dir.exists() and gemini_dir.is_dir()
+
+    # 4. 探测本地 OpenAI 兼容网关及真实服务就绪性 (避免端口开着但服务 disabled 误判)
     candidate_urls: List[str] = []
     if custom_url:
         clean = custom_url.strip().rstrip("/")
@@ -52,10 +72,10 @@ def probe_local_antigravity(custom_url: Optional[str] = None) -> Dict[str, Any]:
     detected_url: Optional[str] = None
     models: List[str] = []
     gateway_online = False
+    gateway_disabled_reason = ""
 
     for base_v1 in candidate_urls:
         try:
-            # 先快速检测端口连通，避免无效 HTTP 超时阻塞
             host_port = base_v1.split("://", 1)[-1].split("/", 1)[0]
             if ":" in host_port:
                 host, port_str = host_port.split(":", 1)
@@ -64,7 +84,7 @@ def probe_local_antigravity(custom_url: Optional[str] = None) -> Dict[str, Any]:
 
             req = urllib.request.Request(
                 f"{base_v1}/models",
-                headers={"User-Agent": "AetherQuant/2.1"},
+                headers={"User-Agent": "AetherQuant/2.3"},
             )
             with urllib.request.urlopen(req, timeout=1.2) as resp:
                 if resp.status == 200:
@@ -78,21 +98,39 @@ def probe_local_antigravity(custom_url: Optional[str] = None) -> Dict[str, Any]:
                     detected_url = base_v1
                     gateway_online = True
                     break
+        except urllib.error.HTTPError as http_err:
+            err_body = http_err.read().decode("utf-8", errors="ignore")
+            if "disabled" in err_body.lower():
+                gateway_disabled_reason = "本地网关端口已监听，但反代开关未开启"
+                detected_url = base_v1
+            elif http_err.code == 401:
+                # 需要认证说明网关本身在线可用
+                gateway_online = True
+                detected_url = base_v1
+                break
         except (urllib.error.URLError, TimeoutError, ValueError, OSError):
-            # 即使 /models 需要鉴权返回 401，也说明网关是活的
             continue
 
-    # 如果 /models 未直接返回 200，但 8045 端口处于监听状态，仍标记网关在线
-    if not gateway_online and _check_tcp_port("127.0.0.1", 8045, timeout=0.2):
-        gateway_online = True
-        detected_url = "http://127.0.0.1:8045/v1"
+    installed = bool(ag_exe_path or agy_cli or data_dir_exists)
+    if gateway_online:
+        status_summary = f"本地网关在线 ({detected_url})"
+    elif installed:
+        status_summary = "已检测到本机 Antigravity (自动双轨兜底模式)"
+    else:
+        status_summary = "未检测到本机 Antigravity，将使用云端 API"
 
     return {
+        "installed": installed,
+        "antigravity_exe": ag_exe_path,
+        "agy_cli_available": bool(agy_cli),
+        "agy_cli_path": agy_cli,
+        "data_dir_exists": data_dir_exists,
+        "data_dir_path": str(gemini_dir) if data_dir_exists else "",
         "gateway_online": gateway_online,
         "gateway_url": detected_url or "http://127.0.0.1:8045/v1",
+        "gateway_note": gateway_disabled_reason,
         "models": models[:30],
-        "agy_cli_available": bool(agy_cli),
-        "agy_cli_path": agy_cli or "",
+        "status_summary": status_summary,
     }
 
 
@@ -121,7 +159,6 @@ def detect_obsidian_vaults() -> Dict[str, Any]:
         except Exception:
             pass
 
-    # 1. 读取 Obsidian 官方配置文件
     obs_json_candidates = []
     appdata = os.environ.get("APPDATA")
     if appdata:
@@ -139,7 +176,6 @@ def detect_obsidian_vaults() -> Dict[str, Any]:
             except Exception:
                 pass
 
-    # 2. 扫描常见标准文档目录
     home = Path.home()
     for cand in (
         home / "Documents" / "Obsidian Vault",
@@ -149,7 +185,6 @@ def detect_obsidian_vaults() -> Dict[str, Any]:
     ):
         _add_vault(cand, is_open=False, source="scan")
 
-    # 优先把当前打开的仓库排在前面
     vaults.sort(key=lambda item: (not item["is_open"], not item["has_templates"], item["name"]))
 
     cfg = load_config()

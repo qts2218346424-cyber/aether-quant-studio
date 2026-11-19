@@ -2462,21 +2462,21 @@ async function openSettings() {
     const isZh = currentLanguage === 'zh-CN';
 
     const providerHtml = providers.map((provider, index) => {
-      let roleBadge = '🤖 独立决策评审';
+      let roleBadge = '独立决策评审';
       let roleDesc = '独立审查行情与技术面特征，提供客观决策参考';
       const nameLower = (provider.name || '').toLowerCase();
       const modelLower = (provider.model || '').toLowerCase();
       const roleLower = (provider.role || '').toLowerCase();
 
       if (nameLower.includes('claude') || modelLower.includes('claude') || roleLower.includes('risk') || roleLower.includes('execution')) {
-        roleBadge = '🛡️ 首席风控官 (开仓一票否决)';
-        roleDesc = '开仓信号发出前异步审查资金费率偏离、大户背离与诱多风险，一票否决高危单。';
+        roleBadge = '首席风控官 (一票否决)';
+        roleDesc = '开仓信号发出前审查资金费率偏离、大户背离与诱多风险。';
       } else if (nameLower.includes('deepseek') || modelLower.includes('deepseek') || modelLower.includes('grok') || roleLower.includes('momentum') || roleLower.includes('reversion')) {
-        roleBadge = '🧬 数据精算师 (历史回测与诊断)';
-        roleDesc = '深度归因复盘历史止损与失败单，诊断参数瓶颈，驱动策略参数自动进化演进。';
+        roleBadge = '数据精算师 (回测与诊断)';
+        roleDesc = '归因复盘历史止损与失败单，诊断参数瓶颈，驱动策略演进。';
       } else if (nameLower.includes('openai') || modelLower.includes('gpt') || roleLower.includes('trend')) {
-        roleBadge = '✍️ 行情解盘师 (币安广场主笔)';
-        roleDesc = '抓取实盘打点与盈亏战报，自动撰写币安广场引流长文与 Obsidian 交易日记。';
+        roleBadge = '行情解盘师 (长文主笔)';
+        roleDesc = '抓取实盘打点与盈亏战报，撰写币安广场长文与交易日记。';
       }
 
       return `
@@ -2495,12 +2495,12 @@ async function openSettings() {
 
     const imgGen = settingsConfig.ai_committee?.image_generation || {};
     const imgCard = `
-      <div class="provider-card" style="border:1px solid rgba(168,85,247,.35);background:rgba(168,85,247,.04)">
+      <div class="provider-card">
         <div class="provider-name">
-          <span class="provider-role-badge" style="background:rgba(168,85,247,.2);color:#c084fc;border:1px solid rgba(168,85,247,.4)">🎨 视觉美术师 (DALL-E 图像生成)</span>
-          <span class="provider-dot" style="background:#a855f7"></span>
+          <span class="provider-role-badge">图像生成引擎 (DALL-E)</span>
+          <span class="provider-dot"></span>
         </div>
-        <div class="provider-role-desc">为币安广场深度研报与快讯实时绘制 16:9 高清封面与科技感走势插图。</div>
+        <div class="provider-role-desc">为研报与快讯生成 16:9 封面与走势配图。</div>
         <div class="settings-field"><label>模型名称 (Model)</label><input id="sp-img-model" value="${escapeHtml(imgGen.model || 'gpt-image-2')}"></div>
         <div class="settings-field"><label>API 地址 (Base URL)</label><input id="sp-img-url" value="${escapeHtml(imgGen.base_url || '')}" placeholder="留空默认复用 OpenAI 主地址"></div>
         <div class="settings-field"><label>API Key</label><input id="sp-img-key" type="password" placeholder="${imgGen.api_key_configured ? tr('keyConfigured') : 'sk-... (留空复用OpenAI Key)'}"></div>
@@ -2513,12 +2513,12 @@ async function openSettings() {
     overlay.id = 'settings-overlay';
     overlay.innerHTML = `
       <div class="settings-modal">
-        <div class="settings-head">
+        <div class="settings-head" style="border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:12px;">
           <div class="settings-title">
-            <strong data-i18n="settingsTitle">${tr('settingsTitle')}</strong>
-            <span data-i18n="settingsInstant">${tr('settingsInstant')}</span>
+            <strong data-i18n="settingsTitle" style="font-size:15px;font-weight:600;color:var(--text-0);">${tr('settingsTitle')}</strong>
+            <span data-i18n="settingsInstant" style="font-size:11px;color:var(--text-2);">${tr('settingsInstant')}</span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px">
             <div class="locale-switch">
               <button class="locale-btn ${currentLanguage==='zh-CN'?'active':''}" data-locale="zh-CN" onclick="setLanguage('zh-CN')">中</button>
               <button class="locale-btn ${currentLanguage==='en-US'?'active':''}" data-locale="en-US" onclick="setLanguage('en-US')">EN</button>
@@ -2526,359 +2526,323 @@ async function openSettings() {
             <button class="settings-close" onclick="closeSettings()">✕</button>
           </div>
         </div>
-        <div class="settings-body">
-          <!-- 0.0 币安合约 API 密钥接入 (Binance API) -->
-          <div class="settings-section" id="binance-api-section" style="background:rgba(240,185,11,0.06);border:1px solid rgba(240,185,11,0.38);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <span style="color:#F0B90B;font-weight:700;font-size:13px;">🔑 币安合约 API 密钥配置 (Binance Futures API)</span>
-              <span style="font-size:11px;font-weight:600;color:${settingsConfig.binance_api_configured ? '#4ADE80' : '#FBBF24'};">
-                ${settingsConfig.binance_api_configured ? `🟢 已接入 (${escapeHtml(settingsConfig.api_key || '')})` : '🟡 未配置真实密钥 (填入后即时生效)'}
-              </span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <div class="settings-field">
-                <label>API Key (公钥)</label>
-                <div style="display:flex;gap:4px;">
-                  <input id="set-binance-key" type="password" placeholder="${settingsConfig.binance_api_configured ? `已保存 (${escapeHtml(settingsConfig.api_key || '')})，留空不变` : '粘贴您的 Binance API Key'}" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-0);">
-                  <button type="button" onclick="toggleBinanceInputType('set-binance-key')" title="显示/隐藏" style="padding:0 9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text-1);cursor:pointer;">👁</button>
+        <div class="settings-tabs-bar" style="display:flex;gap:4px;padding:10px 18px 0;border-bottom:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.12);">
+          <button type="button" class="settings-tab-btn active" data-tab="tab-account" onclick="switchSettingsTab('tab-account')" style="padding:8px 14px;border:none;border-bottom:2px solid #38bdf8;background:transparent;color:#f8fafc;font-size:12px;font-weight:600;cursor:pointer;">账户与网络</button>
+          <button type="button" class="settings-tab-btn" data-tab="tab-ai-kb" onclick="switchSettingsTab('tab-ai-kb')" style="padding:8px 14px;border:none;border-bottom:2px solid transparent;background:transparent;color:#94a3b8;font-size:12px;font-weight:500;cursor:pointer;">AI 桥接与知识库</button>
+          <button type="button" class="settings-tab-btn" data-tab="tab-strategy" onclick="switchSettingsTab('tab-strategy')" style="padding:8px 14px;border:none;border-bottom:2px solid transparent;background:transparent;color:#94a3b8;font-size:12px;font-weight:500;cursor:pointer;">策略与风控参数</button>
+        </div>
+        <div class="settings-body" style="padding:16px 18px;">
+          <!-- ==================== TAB 1: 账户与网络 ==================== -->
+          <div id="tab-account" class="settings-tab-pane">
+            <div class="settings-section" id="binance-api-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span style="color:var(--text-0);font-weight:600;font-size:13px;">币安合约 API 密钥</span>
+                <span style="font-size:11px;font-weight:500;color:${settingsConfig.binance_api_configured ? '#4ADE80' : '#94A3B8'};">
+                  ${settingsConfig.binance_api_configured ? `● 已配置 (${escapeHtml(settingsConfig.api_key || '')})` : '○ 未配置真实密钥'}
+                </span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div class="settings-field">
+                  <label>API Key</label>
+                  <div style="display:flex;gap:4px;">
+                    <input id="set-binance-key" type="password" placeholder="${settingsConfig.binance_api_configured ? `已保存 (${escapeHtml(settingsConfig.api_key || '')})，留空不变` : '输入 Binance API Key'}" style="flex:1;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                    <button type="button" onclick="toggleBinanceInputType('set-binance-key')" title="显示/隐藏" style="padding:0 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text-1);cursor:pointer;font-size:11px;">显隐</button>
+                  </div>
+                </div>
+                <div class="settings-field">
+                  <label>Secret Key</label>
+                  <div style="display:flex;gap:4px;">
+                    <input id="set-binance-secret" type="password" placeholder="${settingsConfig.binance_api_configured ? '已加密存储，留空不变' : '输入 Binance Secret Key'}" style="flex:1;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                    <button type="button" onclick="toggleBinanceInputType('set-binance-secret')" title="显示/隐藏" style="padding:0 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text-1);cursor:pointer;font-size:11px;">显隐</button>
+                  </div>
                 </div>
               </div>
-              <div class="settings-field">
-                <label>Secret Key (私钥)</label>
-                <div style="display:flex;gap:4px;">
-                  <input id="set-binance-secret" type="password" placeholder="${settingsConfig.binance_api_configured ? '已安全加密存储，留空不变' : '粘贴您的 Binance Secret Key'}" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-0);">
-                  <button type="button" onclick="toggleBinanceInputType('set-binance-secret')" title="显示/隐藏" style="padding:0 9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text-1);cursor:pointer;">👁</button>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                  <span style="color:var(--text-2);">接入节点</span>
+                  <select id="set-binance-env" style="background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 10px;color:var(--text-0);font-size:12px;">
+                    <option value="https://fapi.binance.com" ${(settingsConfig.base_url || '').includes('testnet') ? '' : 'selected'}>正式实盘 (fapi.binance.com)</option>
+                    <option value="https://testnet.binancefuture.com" ${(settingsConfig.base_url || '').includes('testnet') ? 'selected' : ''}>模拟测试网 (testnet.binancefuture.com)</option>
+                  </select>
                 </div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-              <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
-                <span style="color:var(--text-2);">接入节点:</span>
-                <select id="set-binance-env" style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-0);font-size:12px;">
-                  <option value="https://fapi.binance.com" ${(settingsConfig.base_url || '').includes('testnet') ? '' : 'selected'}>正式实盘 (fapi.binance.com)</option>
-                  <option value="https://testnet.binancefuture.com" ${(settingsConfig.base_url || '').includes('testnet') ? 'selected' : ''}>模拟测试网 (testnet.binancefuture.com)</option>
-                </select>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <span id="binance-api-test-status" style="font-size:11px;font-weight:600;"></span>
-                <button type="button" id="btn-test-binance-api" onclick="testBinanceApiConnection()" style="background:linear-gradient(90deg,#F0B90B,#D97706);color:#0F172A;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;">
-                  ⚡ 测试 API 连通性与账户权限
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 0.1 AI 双轨桥接：本地 Antigravity 优先 + 云端 API 兜底 -->
-          <div class="settings-section" style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.32);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-              <span style="color:#34D399;font-weight:700;font-size:13px;">⚡ AI 双轨桥接 (本地 Antigravity 优先 + 云端 API)</span>
-              <span id="ag-detect-badge" style="font-size:11px;font-weight:600;color:${agInfo.gateway_online ? '#4ADE80' : '#FBBF24'};">
-                ${agInfo.gateway_online ? `🟢 检测到本地网关 (${escapeHtml(agInfo.gateway_url || '127.0.0.1:8045')})` : '🟡 未检测到本地网关 (将使用云端 API 兜底)'}${agInfo.agy_cli_available ? ' · agy CLI 就绪' : ''}
-              </span>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
-              <div class="settings-field">
-                <label>智能路由策略</label>
-                <select id="set-ai-routing-mode" style="background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:12px;">
-                  <option value="local_first" ${(aiRouting.mode || 'local_first') === 'local_first' ? 'selected' : ''}>优先本地 Antigravity + 云端 API 兜底 (推荐)</option>
-                  <option value="local_only" ${aiRouting.mode === 'local_only' ? 'selected' : ''}>仅使用本地 Antigravity 网关</option>
-                  <option value="cloud_only" ${aiRouting.mode === 'cloud_only' ? 'selected' : ''}>仅使用下方云端 API 投委会</option>
-                </select>
-              </div>
-              <div class="settings-field">
-                <label>本地 Antigravity 网关地址</label>
-                <input id="set-local-ag-url" value="${escapeHtml(localAg.base_url || agInfo.gateway_url || 'http://127.0.0.1:8045/v1')}" placeholder="http://127.0.0.1:8045/v1" style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
-              </div>
-              <div class="settings-field">
-                <label>本地首选模型 (Model)</label>
-                <input id="set-local-ag-model" list="local-ag-models-list" value="${escapeHtml(localAg.model || (agInfo.models && agInfo.models[0]) || 'gemini-2.5-flash')}" placeholder="gemini-2.5-flash" style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
-                <datalist id="local-ag-models-list">
-                  ${(agInfo.models || []).map(m => `<option value="${escapeHtml(m)}">`).join('')}
-                </datalist>
-              </div>
-              <div class="settings-field">
-                <label>本地网关密钥 (可选，无密码留空)</label>
-                <input id="set-local-ag-key" type="password" placeholder="${localAg.api_key ? '已保存，留空不变' : '默认无需填写或输入网关 Token'}" style="background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <button type="button" onclick="refreshEnvDetection()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid var(--border);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;">🔍 重新自动检测本机环境</button>
-                <button type="button" id="btn-test-local-ag" onclick="testLocalAntigravity()" style="background:#10B981;color:#0F172A;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">⚡ 测试本地 Antigravity 桥接</button>
-              </div>
-              <span id="local-ag-test-status" style="font-size:11px;font-weight:600;"></span>
-            </div>
-          </div>
-
-          <!-- 0.2 电脑本地 Obsidian 知识库自动检测与配置 -->
-          <div class="settings-section" style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.32);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-              <span style="color:#C084FC;font-weight:700;font-size:13px;">📚 电脑本地 Obsidian 知识库配置 (自动检测)</span>
-              <span style="font-size:11px;color:var(--text-2);">已发现 ${obsVaults.length} 个本地知识库</span>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <div class="settings-field">
-                <label>快速选择本机已检测到的 Obsidian 仓库</label>
-                <select id="set-obsidian-select" onchange="onSelectDetectedVault(this.value)" style="background:rgba(0,0,0,0.28);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:12px;">
-                  <option value="">-- 请选择本机仓库 (或下方手动输入路径) --</option>
-                  ${obsVaults.map(v => `<option value="${escapeHtml(v.path)}" ${(obsInfo.configured_path === v.path) ? 'selected' : ''}>${escapeHtml(v.name)} (${escapeHtml(v.path)})${v.is_open ? ' [当前打开]' : ''}${v.has_templates ? ' [已就绪]' : ''}</option>`).join('')}
-                </select>
-              </div>
-              <div class="settings-field">
-                <label>当前知识库本地路径 (Vault Path)</label>
-                <div style="display:flex;gap:8px;">
-                  <input id="set-obsidian-path" value="${escapeHtml(obsInfo.configured_path || (settingsConfig.obsidian && settingsConfig.obsidian.vault_path) || '')}" placeholder="例如: D:\\Obsidian\\量化知识库 (留空自动识别)" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text-0);">
-                  <button type="button" id="btn-bind-obsidian" onclick="bindAndInitObsidian()" style="background:#8B5CF6;color:#fff;border:none;padding:0 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;white-space:nowrap;">📂 绑定并初始化模板</button>
-                </div>
-              </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-1);cursor:pointer;">
-                  <input type="checkbox" id="set-obsidian-autosync" ${(obsInfo.auto_sync !== false) ? 'checked' : ''}>
-                  <span>交易复盘与策略笔记自动双向同步至 Obsidian</span>
-                </label>
-                <span id="obsidian-bind-status" style="font-size:11px;font-weight:600;"></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 0. 网络代理与端口设置 (Proxy) -->
-          <div class="settings-section" style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-              <span style="color:#60a5fa;font-weight:700;font-size:13px;">🌐 网络代理与端口配置 (Proxy)</span>
-              <small style="color:var(--text-2);">连接币安期货 API 必需的网络通道 (支持自定义任意端口)</small>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <div class="settings-field">
-                <label style="display:flex;align-items:center;justify-content:space-between;">
-                  <span>代理服务器地址及端口 (HTTP / SOCKS5)</span>
-                  <span style="font-size:11px;color:var(--text-2);">当前生效: ${escapeHtml(settingsConfig.proxy || '未配置 (直连)')}</span>
-                </label>
-                <div style="display:flex;gap:8px;">
-                  <input id="set-proxy" value="${escapeHtml(settingsConfig.proxy || '')}" placeholder="例如: http://127.0.0.1:7890 (留空为直连)" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-0);">
-                  <button type="button" class="provider-test-btn" id="btn-test-proxy" onclick="testProxyConnection()" style="background:#2563eb;color:#fff;border:none;padding:0 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;transition:background .2s;">
-                    ⚡ 测试连接 & 检测出口IP
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span id="binance-api-test-status" style="font-size:11px;font-weight:500;"></span>
+                  <button type="button" id="btn-test-binance-api" onclick="testBinanceApiConnection()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid rgba(255,255,255,0.14);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;">
+                    测试连接与账户权限
                   </button>
                 </div>
               </div>
-              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;margin-top:2px;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span style="color:var(--text-2);">快速切换端口:</span>
-                  <button type="button" style="padding:3px 9px;border-radius:4px;border:1px solid rgba(59,130,246,.4);background:rgba(59,130,246,.15);color:#93c5fd;cursor:pointer;font-size:11px;" onclick="setQuickProxy('7890')">FlClash (7890)</button>
-                  <button type="button" style="padding:3px 9px;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--text-1);cursor:pointer;font-size:11px;" onclick="setQuickProxy('7897')">Clash Verge (7897)</button>
-                  <button type="button" style="padding:3px 9px;border-radius:4px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--text-1);cursor:pointer;font-size:11px;" onclick="setQuickProxy('10809')">v2rayN (10809)</button>
-                  <button type="button" style="padding:3px 9px;border-radius:4px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.1);color:#fca5a5;cursor:pointer;font-size:11px;" onclick="setQuickProxy('')">清空 (直连)</button>
-                </div>
-                <div id="proxy-test-status" style="font-size:11px;font-weight:600;"></div>
+            </div>
+
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span style="color:var(--text-0);font-weight:600;font-size:13px;">网络代理设置</span>
+                <small style="color:var(--text-2);">当前: ${escapeHtml(settingsConfig.proxy || '直连')}</small>
               </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="settings-field">
+                  <div style="display:flex;gap:8px;">
+                    <input id="set-proxy" value="${escapeHtml(settingsConfig.proxy || '')}" placeholder="例如: http://127.0.0.1:7890 (留空为直连)" style="flex:1;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                    <button type="button" class="provider-test-btn" id="btn-test-proxy" onclick="testProxyConnection()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid rgba(255,255,255,0.14);padding:0 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap;">
+                      测试代理连通性
+                    </button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="color:var(--text-2);">常用端口:</span>
+                    <button type="button" style="padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text-1);cursor:pointer;font-size:11px;" onclick="setQuickProxy('7890')">7890</button>
+                    <button type="button" style="padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text-1);cursor:pointer;font-size:11px;" onclick="setQuickProxy('7897')">7897</button>
+                    <button type="button" style="padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text-1);cursor:pointer;font-size:11px;" onclick="setQuickProxy('10809')">10809</button>
+                    <button type="button" style="padding:3px 8px;border-radius:4px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:var(--text-2);cursor:pointer;font-size:11px;" onclick="setQuickProxy('')">直连</button>
+                  </div>
+                  <div id="proxy-test-status" style="font-size:11px;font-weight:500;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text-0);">软件版本与更新</div>
+                  <div style="font-size:11px;color:var(--text-2);margin-top:2px;">当前版本: <span id="app-current-version" style="color:var(--text-1);font-family:monospace;">${escapeHtml(envDetect.current_version || 'v2.3.0')}</span> · 仓库: aether-quant-studio</div>
+                </div>
+                <button type="button" id="btn-check-update" onclick="checkSoftwareUpdate()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid rgba(255,255,255,0.14);padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;">
+                  检查软件更新
+                </button>
+              </div>
+              <div id="software-update-result" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);font-size:12px;"></div>
             </div>
           </div>
 
-          <!-- 1. 场景化一键预设 -->
-          <div class="settings-section" style="background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.3)">
-            <div class="settings-section-title">
-              <span style="color:#c4b5fd" data-i18n="presetsTitle">${tr('presetsTitle')}</span>
-              <small data-i18n="presetsSubtitle">${tr('presetsSubtitle')}</small>
+          <!-- ==================== TAB 2: AI 桥接与知识库 ==================== -->
+          <div id="tab-ai-kb" class="settings-tab-pane" style="display:none;">
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+                <span style="color:var(--text-0);font-weight:600;font-size:13px;">Antigravity 本地桥接 & 云端双轨路由</span>
+                <span id="ag-detect-badge" style="font-size:11px;font-weight:500;color:${agInfo.gateway_online || agInfo.installed ? '#4ADE80' : '#94A3B8'};">
+                  ${agInfo.gateway_online || agInfo.installed ? '● ' : '○ '}${escapeHtml(agInfo.status_summary || '正在检测本机环境')}${agInfo.agy_cli_available ? ' (CLI 就绪)' : ''}
+                </span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                <div class="settings-field">
+                  <label>调度策略</label>
+                  <select id="set-ai-routing-mode" style="background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:12px;">
+                    <option value="local_first" ${(aiRouting.mode || 'local_first') === 'local_first' ? 'selected' : ''}>优先本地 Antigravity，云端 API 自动兜底</option>
+                    <option value="local_only" ${aiRouting.mode === 'local_only' ? 'selected' : ''}>仅使用本地 Antigravity 网关</option>
+                    <option value="cloud_only" ${aiRouting.mode === 'cloud_only' ? 'selected' : ''}>仅使用云端 API 投委会</option>
+                  </select>
+                </div>
+                <div class="settings-field">
+                  <label>本地网关地址</label>
+                  <input id="set-local-ag-url" value="${escapeHtml(localAg.base_url || agInfo.gateway_url || 'http://127.0.0.1:8045/v1')}" placeholder="http://127.0.0.1:8045/v1" style="background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                </div>
+                <div class="settings-field">
+                  <label>首选模型</label>
+                  <input id="set-local-ag-model" list="local-ag-models-list" value="${escapeHtml(localAg.model || (agInfo.models && agInfo.models[0]) || 'gemini-2.5-flash')}" placeholder="gemini-2.5-flash" style="background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                  <datalist id="local-ag-models-list">
+                    ${(agInfo.models || []).map(m => `<option value="${escapeHtml(m)}">`).join('')}
+                  </datalist>
+                </div>
+                <div class="settings-field">
+                  <label>本地网关密钥 (可选)</label>
+                  <input id="set-local-ag-key" type="password" placeholder="${localAg.api_key ? '已保存，留空不变' : '默认留空'}" style="background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <button type="button" onclick="refreshEnvDetection()" style="background:rgba(255,255,255,0.06);color:var(--text-1);border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;">重新检测本机环境</button>
+                  <button type="button" id="btn-test-local-ag" onclick="testLocalAntigravity()" style="background:rgba(255,255,255,0.09);color:var(--text-0);border:1px solid rgba(255,255,255,0.15);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;">测试双轨桥接</button>
+                </div>
+                <span id="local-ag-test-status" style="font-size:11px;font-weight:500;"></span>
+              </div>
             </div>
-            <div class="preset-grid">
-              <div class="preset-card" id="preset-card-conservative" onclick="selectPreset('conservative')">
-                <div class="preset-card-head">
-                  <span class="preset-card-title">🛡️ 稳健防守型</span>
-                  <span class="preset-card-tag">新手/防插针</span>
-                </div>
-                <div class="preset-card-desc">3x 杠杆 · 10% 仓位 · 宽 ATR 防插针止损 · 5% 严格日损熔断。</div>
-              </div>
-              <div class="preset-card active" id="preset-card-trend_swing" onclick="selectPreset('trend_swing')">
-                <div class="preset-card-head">
-                  <span class="preset-card-title">⚔️ 趋势波段型</span>
-                  <span class="preset-card-tag">主攻大行情 (推荐)</span>
-                </div>
-                <div class="preset-card-desc">6x 杠杆 · 18% 仓位 · 动态追踪止损让利润奔跑 · 高周期共振。</div>
-              </div>
-              <div class="preset-card" id="preset-card-aggressive" onclick="selectPreset('aggressive')">
-                <div class="preset-card-head">
-                  <span class="preset-card-title">⚡ 激进突破型</span>
-                  <span class="preset-card-tag">抓放量突破</span>
-                </div>
-                <div class="preset-card-desc">8x 杠杆 · 25% 仓位 · 紧凑止损博弈放量波动率扩张 · 快进快出。</div>
-              </div>
-              <div class="preset-card" id="preset-card-ai_evolved" onclick="selectPreset('ai_evolved')">
-                <div class="preset-card-head">
-                  <span class="preset-card-title">🤖 AI 自动进化</span>
-                  <span class="preset-card-tag" style="background:rgba(16,185,129,.2);color:#6ee7b7">历史回测实算</span>
-                </div>
-                <div class="preset-card-desc">自动提取最新历史 K 线回测中样本外夏普最高的演化参数一键同步。</div>
-              </div>
-            </div>
-          </div>
 
-          <!-- 2. 日常核心控制条 (三滑块) -->
-          <div class="settings-section">
-            <div class="settings-section-title">
-              <span data-i18n="coreControlsTitle">${tr('coreControlsTitle')}</span>
-              <small style="color:var(--blue)">与预设实时联动</small>
-            </div>
-            <div class="settings-core-strip">
-              <div class="core-slider-card">
-                <div class="core-slider-header">
-                  <label data-i18n="defaultLeverage">${tr('defaultLeverage')}</label>
-                  <span class="core-value-badge" id="val-badge-leverage">${Number(settingsConfig.leverage ?? 6)}x</span>
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+                <span style="color:var(--text-0);font-weight:600;font-size:13px;">Obsidian 本地知识库</span>
+                <span style="font-size:11px;color:var(--text-2);">已发现 ${obsVaults.length} 个本地仓库</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div class="settings-field">
+                  <label>从本机仓库选择</label>
+                  <select id="set-obsidian-select" onchange="onSelectDetectedVault(this.value)" style="background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);font-size:12px;">
+                    <option value="">-- 选择已检测到的仓库 (或下方手动填入路径) --</option>
+                    ${obsVaults.map(v => `<option value="${escapeHtml(v.path)}" ${(obsInfo.configured_path === v.path) ? 'selected' : ''}>${escapeHtml(v.name)} (${escapeHtml(v.path)})${v.is_open ? ' [当前打开]' : ''}${v.has_templates ? ' [已初始化]' : ''}</option>`).join('')}
+                  </select>
                 </div>
-                <div class="core-slider-controls">
-                  <input type="range" id="set-leverage-range" min="1" max="20" step="1" value="${Number(settingsConfig.leverage ?? 6)}" oninput="syncCoreSlider('leverage', this.value)">
-                  <input type="number" id="set-leverage" min="1" max="20" step="1" value="${Number(settingsConfig.leverage ?? 6)}" oninput="syncCoreSlider('leverage', this.value)">
+                <div class="settings-field">
+                  <label>知识库路径</label>
+                  <div style="display:flex;gap:8px;">
+                    <input id="set-obsidian-path" value="${escapeHtml(obsInfo.configured_path || (settingsConfig.obsidian && settingsConfig.obsidian.vault_path) || '')}" placeholder="例如: D:\\Obsidian\\量化知识库" style="flex:1;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:7px 10px;color:var(--text-0);">
+                    <button type="button" id="btn-bind-obsidian" onclick="bindAndInitObsidian()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid rgba(255,255,255,0.14);padding:0 14px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap;">绑定并初始化模板</button>
+                  </div>
                 </div>
-              </div>
-              <div class="core-slider-card">
-                <div class="core-slider-header">
-                  <label data-i18n="positionSize">${tr('positionSize')}</label>
-                  <span class="core-value-badge" id="val-badge-pos-size">${Number(risk.position_size_pct ?? 18)}%</span>
-                </div>
-                <div class="core-slider-controls">
-                  <input type="range" id="set-position-size-range" min="1" max="50" step="1" value="${Number(risk.position_size_pct ?? 18)}" oninput="syncCoreSlider('pos-size', this.value)">
-                  <input type="number" id="set-position-size" min="1" max="50" step="1" value="${Number(risk.position_size_pct ?? 18)}" oninput="syncCoreSlider('pos-size', this.value)">
-                </div>
-              </div>
-              <div class="core-slider-card">
-                <div class="core-slider-header">
-                  <label data-i18n="dailyLossStop">${tr('dailyLossStop')}</label>
-                  <span class="core-value-badge" id="val-badge-daily-loss" style="color:var(--red)">${Number(risk.max_daily_loss_pct ?? 7.5)}%</span>
-                </div>
-                <div class="core-slider-controls">
-                  <input type="range" id="set-max-daily-loss-range" min="1" max="30" step="0.5" value="${Number(risk.max_daily_loss_pct ?? 7.5)}" oninput="syncCoreSlider('daily-loss', this.value)">
-                  <input type="number" id="set-max-daily-loss" min="1" max="30" step="0.5" value="${Number(risk.max_daily_loss_pct ?? 7.5)}" oninput="syncCoreSlider('daily-loss', this.value)">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 3. 高级底层量化参数 (折叠面板) -->
-          <details class="settings-advanced-details">
-            <summary class="settings-advanced-summary">
-              <span>▼ <span data-i18n="advancedQuantTitle">${tr('advancedQuantTitle')}</span></span>
-              <small style="color:var(--text-2);font-weight:normal">点击展开/收起 18 项底层参数</small>
-            </summary>
-            <div class="settings-advanced-content">
-              <div class="settings-section" style="margin-bottom:10px;background:rgba(26,34,53,.35)">
-                <div class="settings-section-title"><span data-i18n="selection">${tr('selection')}</span></div>
-                <div class="settings-grid">
-                  <div class="settings-field wide"><label data-i18n="symbolsLabel">${tr('symbolsLabel')}</label><input id="set-symbols" value="${escapeHtml((settingsConfig.symbols || []).join(','))}"></div>
-                  <div class="settings-field"><label data-i18n="signalThreshold">${tr('signalThreshold')}</label><input id="set-signal-th" type="number" min="0" max="100" value="${Number(strategy.signal_threshold ?? 40)}"></div>
-                  <div class="settings-field"><label data-i18n="scanThreshold">${tr('scanThreshold')}</label><input id="set-scan-th" type="number" min="0" max="100" value="${Number(strategy.scan_threshold ?? 40)}"></div>
-                  <div class="settings-field"><label data-i18n="maxPrice">${tr('maxPrice')}</label><input id="set-max-price" type="number" min="0.001" step=".01" value="${Number(selection.max_price ?? 10)}"></div>
-                  <div class="settings-field"><label data-i18n="minVolatility">${tr('minVolatility')}</label><input id="set-min-atr" type="number" min="0.1" step=".1" value="${Number(selection.min_atr_pct ?? 1.2)}"></div>
-                  <div class="settings-field"><label data-i18n="minVolumeSurge">${tr('minVolumeSurge')}</label><input id="set-min-vol-surge" type="number" min="0.1" step=".1" value="${Number(selection.min_vol_surge ?? 0.2)}"></div>
-                  <div class="settings-field"><label data-i18n="candidateScanLimit">${tr('candidateScanLimit')}</label><input id="set-candidate-scan-limit" type="number" min="20" max="120" step="10" value="${Number(selection.candidate_scan_limit ?? 80)}"></div>
-                  <div class="settings-field"><label data-i18n="minVolume24h">${tr('minVolume24h')}</label><input id="set-min-volume" type="number" min="0" step="1000000" value="${Number(liquidity.min_quote_volume_24h ?? 3000000)}"></div>
-                  <div class="settings-field"><label data-i18n="maxSpread">${tr('maxSpread')}</label><input id="set-max-spread" type="number" min="1" step="1" value="${Number(liquidity.max_spread_bps ?? 8)}"></div>
-                  <div class="settings-toggle"><input id="set-allow-all-symbols" type="checkbox" ${selection.allow_all_symbols ? 'checked' : ''}><label data-i18n="useAllSymbols">${tr('useAllSymbols')}</label></div>
-                </div>
-              </div>
-              <div class="settings-section" style="margin-bottom:10px;background:rgba(26,34,53,.35)">
-                <div class="settings-section-title"><span data-i18n="positionManagement">${tr('positionManagement')}</span></div>
-                <div class="settings-grid">
-                  <div class="settings-field"><label data-i18n="tp1Atr">${tr('tp1Atr')}</label><input id="set-tp1-atr" type="number" min="0.5" step=".25" value="${Number(pm.tp1_atr ?? 1.5)}"></div>
-                  <div class="settings-field"><label data-i18n="tp2Atr">${tr('tp2Atr')}</label><input id="set-tp2-atr" type="number" min="1.0" step=".25" value="${Number(pm.tp2_atr ?? 2.5)}"></div>
-                  <div class="settings-field"><label data-i18n="partialClose">${tr('partialClose')}</label><input id="set-partial-close" type="number" min="10" max="100" step="5" value="${Number(pm.partial_close_pct ?? 50)}"></div>
-                  <div class="settings-field"><label data-i18n="trailingAtr">${tr('trailingAtr')}</label><input id="set-trailing-atr" type="number" min="0.5" step=".25" value="${Number(pm.trailing_atr ?? 1)}"></div>
-                  <div class="settings-field"><label data-i18n="trailAfterTp">${tr('trailAfterTp')}</label><select id="set-trail-after-tp"><option value="1" ${Number(pm.trail_after_tp ?? 1)===1?'selected':''}>TP1</option><option value="2" ${Number(pm.trail_after_tp ?? 1)===2?'selected':''}>TP2</option></select></div>
-                  <div class="settings-field"><label data-i18n="initialStopAtr">${tr('initialStopAtr')}</label><input id="set-initial-stop-atr" type="number" min="1" step=".25" value="${Number(pm.initial_stop_atr ?? 2.5)}"></div>
-                  <div class="settings-field"><label data-i18n="hardStop">${tr('hardStop')}</label><input id="set-hard-stop-pct" type="number" min="1" step=".25" value="${Number(pm.hard_stop_pct ?? 6)}"></div>
-                  <div class="settings-field"><label data-i18n="stopConfirmations">${tr('stopConfirmations')}</label><input id="set-stop-confirmations" type="number" min="1" max="5" step="1" value="${Number(pm.stop_confirmation_candles ?? 2)}"></div>
-                </div>
-              </div>
-              <div class="settings-section" style="margin-bottom:0;background:rgba(26,34,53,.35)">
-                <div class="settings-section-title"><span data-i18n="execution">${tr('execution')}</span></div>
-                <div class="settings-grid">
-                  <div class="settings-toggle"><input id="set-isolated-margin" type="checkbox" ${String(execution.margin_mode || 'ISOLATED').toUpperCase()==='ISOLATED'?'checked':''}><label data-i18n="isolatedMargin">${tr('isolatedMargin')}</label></div>
-                  <div class="settings-field"><label data-i18n="minNotionalBuffer">${tr('minNotionalBuffer')}</label><input id="set-min-notional-buffer" type="number" min="0" max="10" step=".5" value="${Number(execution.min_notional_buffer_pct ?? 2)}"></div>
-                  <div class="settings-field"><label data-i18n="maxNotionalOvershoot">${tr('maxNotionalOvershoot')}</label><input id="set-max-notional-overshoot" type="number" min="0" max="50" step="1" value="${Number(execution.max_notional_overshoot_pct ?? 18)}"></div>
-                  <div class="settings-field"><label data-i18n="maxPositions">${tr('maxPositions')}</label><input id="set-max-pos" type="number" min="1" max="10" value="${Number(risk.max_positions ?? 3)}"></div>
-                </div>
-              </div>
-            </div>
-          </details>
-
-          <!-- 4. TypeSafe Jev (System One) 智能决策门禁 -->
-          <div class="settings-section" style="border:1px solid rgba(14,165,233,.35);background:rgba(14,165,233,.04);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
-            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <div>
-                <span style="color:#0ea5e9;font-weight:700;font-size:13px;">🧠 TypeSafe Jev (System One) 智能决策门禁</span>
-                <small style="color:var(--text-2);display:block;margin-top:2px;">非生成式直连模型 · 毫秒级并行原子评估 · 真数学置信度门禁</small>
-              </div>
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--text-1);background:rgba(14,165,233,.12);padding:4px 10px;border-radius:6px;border:1px solid rgba(14,165,233,.3);">
-                <input type="checkbox" id="set-typesafe-enabled" ${settingsConfig.typesafe?.enabled ? 'checked' : ''} style="width:16px;height:16px;accent-color:#0ea5e9">
-                <span>开启 Jev 决策门禁</span>
-              </label>
-            </div>
-            
-            <div class="settings-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-              <div class="settings-field">
-                <label>目标模型</label>
-                <input id="set-typesafe-model" value="${escapeHtml(settingsConfig.typesafe?.model || 'jev-latest')}" placeholder="jev-latest">
-              </div>
-              <div class="settings-field">
-                <label>TypeSafe API Key</label>
-                <input id="set-typesafe-key" type="password" placeholder="${settingsConfig.typesafe?.api_key_configured ? '已配置 (留空保持现有Key)' : '请输入 API Key'}">
-              </div>
-              <div class="settings-field">
-                <label title="0~1，默认0.65。只有模型置信度高于此值才准许执行">最小置信度门槛</label>
-                <input id="set-typesafe-conf" type="number" step="0.05" min="0.5" max="0.99" value="${settingsConfig.typesafe?.min_confidence ?? 0.65}">
-              </div>
-              <div class="settings-field">
-                <label title="0~4，默认2.5。若风险评估高于此分值则一票否决拦截">最大风险分上限</label>
-                <input id="set-typesafe-risk" type="number" step="0.1" min="1.0" max="4.0" value="${settingsConfig.typesafe?.max_risk_score ?? 2.5}">
-              </div>
-              <div class="settings-field">
-                <label title="0~4，默认1.8。突破或顺势单需达到此质量分才允许入场">突破质量门槛</label>
-                <input id="set-typesafe-breakout" type="number" step="0.1" min="0.5" max="4.0" value="${settingsConfig.typesafe?.min_breakout_score ?? 1.8}">
-              </div>
-              <div class="settings-field">
-                <label>超时时间 (秒)</label>
-                <input id="set-typesafe-timeout" type="number" step="1" min="3" max="30" value="${settingsConfig.typesafe?.timeout_seconds ?? 8}">
-              </div>
-              <div class="settings-field" style="grid-column: 1 / -1; background: rgba(14,165,233,.08); padding: 9px 12px; border-radius: 6px; border: 1px dashed rgba(14,165,233,.35); margin-top: 4px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600;color:#0284c7;font-size:12px;">
-                    <input type="checkbox" id="set-typesafe-playbook" ${settingsConfig.typesafe?.use_obsidian_playbook !== false ? 'checked' : ''} style="width:15px;height:15px;accent-color:#0ea5e9">
-                    <span>📚 挂载本地 Obsidian 策略脑图 (E:\量化)</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-1);cursor:pointer;">
+                    <input type="checkbox" id="set-obsidian-autosync" ${(obsInfo.auto_sync !== false) ? 'checked' : ''}>
+                    <span>交易复盘与策略笔记自动双向同步</span>
                   </label>
-                  <span style="font-size:10px;color:var(--text-2);">实时抽取 7套实战策略规则 & 交易习惯纪律</span>
+                  <span id="obsidian-bind-status" style="font-size:11px;font-weight:500;"></span>
                 </div>
-                <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
-                  <div>
-                    <label style="font-size:11px;" title="0~4分，默认1.5分。低于此契合度将一票否决拦截">策略契合度门槛 (0~4分)</label>
-                    <input id="set-typesafe-min-playbook" type="number" step="0.1" min="0.5" max="4.0" value="${settingsConfig.typesafe?.min_playbook_score ?? 1.5}">
+              </div>
+            </div>
+
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div>
+                  <span style="color:var(--text-0);font-weight:600;font-size:13px;">TypeSafe Jev (System One) 决策门禁</span>
+                  <small style="color:var(--text-2);display:block;margin-top:2px;">毫秒级并行原子评估 · 数学置信度门禁</small>
+                </div>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;font-weight:500;color:var(--text-1);background:rgba(255,255,255,0.04);padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">
+                  <input type="checkbox" id="set-typesafe-enabled" ${settingsConfig.typesafe?.enabled ? 'checked' : ''} style="width:15px;height:15px;">
+                  <span>开启 Jev 门禁</span>
+                </label>
+              </div>
+              <div class="settings-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <div class="settings-field"><label>目标模型</label><input id="set-typesafe-model" value="${escapeHtml(settingsConfig.typesafe?.model || 'jev-latest')}" placeholder="jev-latest"></div>
+                <div class="settings-field"><label>TypeSafe API Key</label><input id="set-typesafe-key" type="password" placeholder="${settingsConfig.typesafe?.api_key_configured ? '已配置，留空不变' : '请输入 API Key'}"></div>
+                <div class="settings-field"><label>最小置信度门槛</label><input id="set-typesafe-conf" type="number" step="0.05" min="0.5" max="0.99" value="${settingsConfig.typesafe?.min_confidence ?? 0.65}"></div>
+                <div class="settings-field"><label>最大风险分上限</label><input id="set-typesafe-risk" type="number" step="0.1" min="1.0" max="4.0" value="${settingsConfig.typesafe?.max_risk_score ?? 2.5}"></div>
+                <div class="settings-field"><label>突破质量门槛</label><input id="set-typesafe-breakout" type="number" step="0.1" min="0.5" max="4.0" value="${settingsConfig.typesafe?.min_breakout_score ?? 1.8}"></div>
+                <div class="settings-field"><label>超时时间 (秒)</label><input id="set-typesafe-timeout" type="number" step="1" min="3" max="30" value="${settingsConfig.typesafe?.timeout_seconds ?? 8}"></div>
+                <div class="settings-field" style="grid-column: 1 / -1; background: rgba(255,255,255,0.02); padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.07); margin-top: 4px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;color:var(--text-0);font-size:12px;">
+                      <input type="checkbox" id="set-typesafe-playbook" ${settingsConfig.typesafe?.use_obsidian_playbook !== false ? 'checked' : ''} style="width:14px;height:14px;">
+                      <span>挂载本地 Obsidian 策略规则与交易纪律</span>
+                    </label>
                   </div>
-                  <div>
-                    <label style="font-size:11px;" title="0~1，默认0.45。违背交易习惯或追高冲动概率高于此值则拦截">习惯违规警戒上限 (0~1)</label>
-                    <input id="set-typesafe-max-violation" type="number" step="0.05" min="0.1" max="0.9" value="${settingsConfig.typesafe?.max_violation_prob ?? 0.45}">
+                  <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px;">
+                    <div><label style="font-size:11px;">策略契合度门槛 (0~4分)</label><input id="set-typesafe-min-playbook" type="number" step="0.1" min="0.5" max="4.0" value="${settingsConfig.typesafe?.min_playbook_score ?? 1.5}"></div>
+                    <div><label style="font-size:11px;">习惯违规警戒上限 (0~1)</label><input id="set-typesafe-max-violation" type="number" step="0.05" min="0.1" max="0.9" value="${settingsConfig.typesafe?.max_violation_prob ?? 0.45}"></div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
+                <button type="button" class="provider-test-btn" id="btn-test-typesafe" onclick="testTypeSafeConnection()" style="background:rgba(255,255,255,0.08);color:var(--text-0);border:1px solid rgba(255,255,255,0.14);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:500;">测试 TypeSafe 连通性</button>
+                <span id="typesafe-test-status" style="font-size:11px;font-weight:500;"></span>
+              </div>
+            </div>
+
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:0;">
+              <div class="settings-section-title">
+                <span data-i18n="aiMatrixTitle">${tr('aiMatrixTitle')}</span>
+                <small data-i18n="aiMatrixSubtitle">${tr('aiMatrixSubtitle')}</small>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:6px;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;">
+                  <input type="checkbox" id="set-ai-committee-enabled" ${settingsConfig.ai_committee?.enabled ? 'checked' : ''} style="width:15px;height:15px;">
+                  <strong data-i18n="aiCommitteeGateToggle">${tr('aiCommitteeGateToggle')}</strong>
+                </label>
+                <span style="font-size:10px;color:var(--text-2);" data-i18n="aiCommitteeGateHint">${tr('aiCommitteeGateHint')}</span>
+              </div>
+              <div class="provider-grid">${finalProviderHtml || `<div class="empty-state" data-i18n="noModels">${tr('noModels')}</div>`}</div>
+            </div>
+          </div>
+
+          <!-- ==================== TAB 3: 策略与风控参数 ==================== -->
+          <div id="tab-strategy" class="settings-tab-pane" style="display:none;">
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title">
+                <span data-i18n="presetsTitle">${tr('presetsTitle')}</span>
+                <small data-i18n="presetsSubtitle">${tr('presetsSubtitle')}</small>
+              </div>
+              <div class="preset-grid">
+                <div class="preset-card" id="preset-card-conservative" onclick="selectPreset('conservative')">
+                  <div class="preset-card-head"><span class="preset-card-title">稳健防守型</span><span class="preset-card-tag">低杠杆/防插针</span></div>
+                  <div class="preset-card-desc">3x 杠杆 · 10% 仓位 · 宽 ATR 止损 · 5% 日损熔断。</div>
+                </div>
+                <div class="preset-card active" id="preset-card-trend_swing" onclick="selectPreset('trend_swing')">
+                  <div class="preset-card-head"><span class="preset-card-title">趋势波段型</span><span class="preset-card-tag">主攻大行情</span></div>
+                  <div class="preset-card-desc">6x 杠杆 · 18% 仓位 · 动态追踪止损 · 高周期共振。</div>
+                </div>
+                <div class="preset-card" id="preset-card-aggressive" onclick="selectPreset('aggressive')">
+                  <div class="preset-card-head"><span class="preset-card-title">激进突破型</span><span class="preset-card-tag">放量突破</span></div>
+                  <div class="preset-card-desc">8x 杠杆 · 25% 仓位 · 紧凑止损 · 快进快出。</div>
+                </div>
+                <div class="preset-card" id="preset-card-ai_evolved" onclick="selectPreset('ai_evolved')">
+                  <div class="preset-card-head"><span class="preset-card-title">历史回测最优</span><span class="preset-card-tag">样本外演进</span></div>
+                  <div class="preset-card-desc">自动提取最新历史 K 线回测中夏普最高的演化参数。</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section" style="background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+              <div class="settings-section-title">
+                <span data-i18n="coreControlsTitle">${tr('coreControlsTitle')}</span>
+                <small style="color:var(--text-2)">与预设实时联动</small>
+              </div>
+              <div class="settings-core-strip">
+                <div class="core-slider-card">
+                  <div class="core-slider-header"><label data-i18n="defaultLeverage">${tr('defaultLeverage')}</label><span class="core-value-badge" id="val-badge-leverage">${Number(settingsConfig.leverage ?? 6)}x</span></div>
+                  <div class="core-slider-controls">
+                    <input type="range" id="set-leverage-range" min="1" max="20" step="1" value="${Number(settingsConfig.leverage ?? 6)}" oninput="syncCoreSlider('leverage', this.value)">
+                    <input type="number" id="set-leverage" min="1" max="20" step="1" value="${Number(settingsConfig.leverage ?? 6)}" oninput="syncCoreSlider('leverage', this.value)">
+                  </div>
+                </div>
+                <div class="core-slider-card">
+                  <div class="core-slider-header"><label data-i18n="positionSize">${tr('positionSize')}</label><span class="core-value-badge" id="val-badge-pos-size">${Number(risk.position_size_pct ?? 18)}%</span></div>
+                  <div class="core-slider-controls">
+                    <input type="range" id="set-position-size-range" min="1" max="50" step="1" value="${Number(risk.position_size_pct ?? 18)}" oninput="syncCoreSlider('pos-size', this.value)">
+                    <input type="number" id="set-position-size" min="1" max="50" step="1" value="${Number(risk.position_size_pct ?? 18)}" oninput="syncCoreSlider('pos-size', this.value)">
+                  </div>
+                </div>
+                <div class="core-slider-card">
+                  <div class="core-slider-header"><label data-i18n="dailyLossStop">${tr('dailyLossStop')}</label><span class="core-value-badge" id="val-badge-daily-loss" style="color:var(--red)">${Number(risk.max_daily_loss_pct ?? 7.5)}%</span></div>
+                  <div class="core-slider-controls">
+                    <input type="range" id="set-max-daily-loss-range" min="1" max="30" step="0.5" value="${Number(risk.max_daily_loss_pct ?? 7.5)}" oninput="syncCoreSlider('daily-loss', this.value)">
+                    <input type="number" id="set-max-daily-loss" min="1" max="30" step="0.5" value="${Number(risk.max_daily_loss_pct ?? 7.5)}" oninput="syncCoreSlider('daily-loss', this.value)">
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px dashed rgba(14,165,233,.2);">
-              <button type="button" class="provider-test-btn" id="btn-test-typesafe" onclick="testTypeSafeConnection()" style="background:#0ea5e9;color:#fff;border:none;padding:5px 12px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;">
-                ⚡ 测试 TypeSafe 连通性
-              </button>
-              <span id="typesafe-test-status" style="font-size:11px;font-weight:500;"></span>
-            </div>
-          </div>
-
-          <!-- 5. 传统 AI 模型分工矩阵 -->
-          <div class="settings-section">
-            <div class="settings-section-title">
-              <span data-i18n="aiMatrixTitle">${tr('aiMatrixTitle')}</span>
-              <small data-i18n="aiMatrixSubtitle">${tr('aiMatrixSubtitle')}</small>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:9px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:7px;">
-              <label style="display:flex;align-items:center;gap:8px;font-size:11px;cursor:pointer;">
-                <input type="checkbox" id="set-ai-committee-enabled" ${settingsConfig.ai_committee?.enabled ? 'checked' : ''} style="width:16px;height:16px;accent-color:var(--blue)">
-                <strong data-i18n="aiCommitteeGateToggle">${tr('aiCommitteeGateToggle')}</strong>
-              </label>
-              <span style="font-size:10px;color:var(--text-2);" data-i18n="aiCommitteeGateHint">${tr('aiCommitteeGateHint')}</span>
-            </div>
-            <div class="provider-grid">${finalProviderHtml || `<div class="empty-state" data-i18n="noModels">${tr('noModels')}</div>`}</div>
+            <details class="settings-advanced-details" open>
+              <summary class="settings-advanced-summary">
+                <span>▼ <span data-i18n="advancedQuantTitle">${tr('advancedQuantTitle')}</span></span>
+                <small style="color:var(--text-2);font-weight:normal">18 项底层策略与仓位参数</small>
+              </summary>
+              <div class="settings-advanced-content">
+                <div class="settings-section" style="margin-bottom:10px;background:rgba(255,255,255,0.02)">
+                  <div class="settings-section-title"><span data-i18n="selection">${tr('selection')}</span></div>
+                  <div class="settings-grid">
+                    <div class="settings-field wide"><label data-i18n="symbolsLabel">${tr('symbolsLabel')}</label><input id="set-symbols" value="${escapeHtml((settingsConfig.symbols || []).join(','))}"></div>
+                    <div class="settings-field"><label data-i18n="signalThreshold">${tr('signalThreshold')}</label><input id="set-signal-th" type="number" min="0" max="100" value="${Number(strategy.signal_threshold ?? 40)}"></div>
+                    <div class="settings-field"><label data-i18n="scanThreshold">${tr('scanThreshold')}</label><input id="set-scan-th" type="number" min="0" max="100" value="${Number(strategy.scan_threshold ?? 40)}"></div>
+                    <div class="settings-field"><label data-i18n="maxPrice">${tr('maxPrice')}</label><input id="set-max-price" type="number" min="0.001" step=".01" value="${Number(selection.max_price ?? 10)}"></div>
+                    <div class="settings-field"><label data-i18n="minVolatility">${tr('minVolatility')}</label><input id="set-min-atr" type="number" min="0.1" step=".1" value="${Number(selection.min_atr_pct ?? 1.2)}"></div>
+                    <div class="settings-field"><label data-i18n="minVolumeSurge">${tr('minVolumeSurge')}</label><input id="set-min-vol-surge" type="number" min="0.1" step=".1" value="${Number(selection.min_vol_surge ?? 0.2)}"></div>
+                    <div class="settings-field"><label data-i18n="candidateScanLimit">${tr('candidateScanLimit')}</label><input id="set-candidate-scan-limit" type="number" min="20" max="120" step="10" value="${Number(selection.candidate_scan_limit ?? 80)}"></div>
+                    <div class="settings-field"><label data-i18n="minVolume24h">${tr('minVolume24h')}</label><input id="set-min-volume" type="number" min="0" step="1000000" value="${Number(liquidity.min_quote_volume_24h ?? 3000000)}"></div>
+                    <div class="settings-field"><label data-i18n="maxSpread">${tr('maxSpread')}</label><input id="set-max-spread" type="number" min="1" step="1" value="${Number(liquidity.max_spread_bps ?? 8)}"></div>
+                    <div class="settings-toggle"><input id="set-allow-all-symbols" type="checkbox" ${selection.allow_all_symbols ? 'checked' : ''}><label data-i18n="useAllSymbols">${tr('useAllSymbols')}</label></div>
+                  </div>
+                </div>
+                <div class="settings-section" style="margin-bottom:10px;background:rgba(255,255,255,0.02)">
+                  <div class="settings-section-title"><span data-i18n="positionManagement">${tr('positionManagement')}</span></div>
+                  <div class="settings-grid">
+                    <div class="settings-field"><label data-i18n="tp1Atr">${tr('tp1Atr')}</label><input id="set-tp1-atr" type="number" min="0.5" step=".25" value="${Number(pm.tp1_atr ?? 1.5)}"></div>
+                    <div class="settings-field"><label data-i18n="tp2Atr">${tr('tp2Atr')}</label><input id="set-tp2-atr" type="number" min="1.0" step=".25" value="${Number(pm.tp2_atr ?? 2.5)}"></div>
+                    <div class="settings-field"><label data-i18n="partialClose">${tr('partialClose')}</label><input id="set-partial-close" type="number" min="10" max="100" step="5" value="${Number(pm.partial_close_pct ?? 50)}"></div>
+                    <div class="settings-field"><label data-i18n="trailingAtr">${tr('trailingAtr')}</label><input id="set-trailing-atr" type="number" min="0.5" step=".25" value="${Number(pm.trailing_atr ?? 1)}"></div>
+                    <div class="settings-field"><label data-i18n="trailAfterTp">${tr('trailAfterTp')}</label><select id="set-trail-after-tp"><option value="1" ${Number(pm.trail_after_tp ?? 1)===1?'selected':''}>TP1</option><option value="2" ${Number(pm.trail_after_tp ?? 1)===2?'selected':''}>TP2</option></select></div>
+                    <div class="settings-field"><label data-i18n="initialStopAtr">${tr('initialStopAtr')}</label><input id="set-initial-stop-atr" type="number" min="1" step=".25" value="${Number(pm.initial_stop_atr ?? 2.5)}"></div>
+                    <div class="settings-field"><label data-i18n="hardStop">${tr('hardStop')}</label><input id="set-hard-stop-pct" type="number" min="1" step=".25" value="${Number(pm.hard_stop_pct ?? 6)}"></div>
+                    <div class="settings-field"><label data-i18n="stopConfirmations">${tr('stopConfirmations')}</label><input id="set-stop-confirmations" type="number" min="1" max="5" step="1" value="${Number(pm.stop_confirmation_candles ?? 2)}"></div>
+                  </div>
+                </div>
+                <div class="settings-section" style="margin-bottom:0;background:rgba(255,255,255,0.02)">
+                  <div class="settings-section-title"><span data-i18n="execution">${tr('execution')}</span></div>
+                  <div class="settings-grid">
+                    <div class="settings-toggle"><input id="set-isolated-margin" type="checkbox" ${String(execution.margin_mode || 'ISOLATED').toUpperCase()==='ISOLATED'?'checked':''}><label data-i18n="isolatedMargin">${tr('isolatedMargin')}</label></div>
+                    <div class="settings-field"><label data-i18n="minNotionalBuffer">${tr('minNotionalBuffer')}</label><input id="set-min-notional-buffer" type="number" min="0" max="10" step=".5" value="${Number(execution.min_notional_buffer_pct ?? 2)}"></div>
+                    <div class="settings-field"><label data-i18n="maxNotionalOvershoot">${tr('maxNotionalOvershoot')}</label><input id="set-max-notional-overshoot" type="number" min="0" max="50" step="1" value="${Number(execution.max_notional_overshoot_pct ?? 18)}"></div>
+                    <div class="settings-field"><label data-i18n="maxPositions">${tr('maxPositions')}</label><input id="set-max-pos" type="number" min="1" max="10" value="${Number(risk.max_positions ?? 3)}"></div>
+                  </div>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
         <div class="settings-foot">
@@ -3010,6 +2974,62 @@ async function saveSettings() {
      status.textContent = tr('saveFailed') + error.message;
     status.style.color = 'var(--red)';
     button.disabled = false;
+  }
+}
+
+function switchSettingsTab(tabId) {
+  const panes = document.querySelectorAll('.settings-tab-pane');
+  const btns = document.querySelectorAll('.settings-tab-btn');
+  panes.forEach(p => {
+    p.style.display = p.id === tabId ? 'block' : 'none';
+  });
+  btns.forEach(b => {
+    const active = b.dataset.tab === tabId;
+    b.style.borderBottomColor = active ? '#38bdf8' : 'transparent';
+    b.style.color = active ? '#f8fafc' : '#94a3b8';
+    b.style.fontWeight = active ? '600' : '500';
+  });
+}
+
+async function checkSoftwareUpdate() {
+  const btn = document.getElementById('btn-check-update');
+  const box = document.getElementById('software-update-result');
+  if (!btn || !box) return;
+
+  btn.disabled = true;
+  btn.textContent = '正在检查...';
+  box.style.display = 'block';
+  box.style.color = 'var(--text-2)';
+  box.innerHTML = '正在连接 GitHub Releases 获取最新版本信息...';
+
+  try {
+    const res = await fetch('/api/system/check_update');
+    const data = await res.json();
+    if (!data.ok) {
+      box.style.color = 'var(--red)';
+      box.innerHTML = `检查更新失败: ${escapeHtml(data.error || '网络异常')}`;
+      return;
+    }
+
+    if (data.has_update) {
+      box.style.color = 'var(--text-0)';
+      box.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+          <span style="color:#4ADE80;font-weight:600;">发现新版本: ${escapeHtml(data.latest_version)} (当前: ${escapeHtml(data.current_version)})</span>
+          <a href="${escapeHtml(data.download_url)}" target="_blank" style="padding:4px 12px;background:#2563eb;color:#fff;border-radius:5px;text-decoration:none;font-size:11px;font-weight:600;">下载新版安装包</a>
+        </div>
+        ${data.release_notes ? `<pre style="white-space:pre-wrap;font-family:inherit;font-size:11px;color:var(--text-2);background:rgba(0,0,0,0.2);padding:8px 10px;border-radius:6px;max-height:140px;overflow-y:auto;">${escapeHtml(data.release_notes)}</pre>` : ''}
+      `;
+    } else {
+      box.style.color = '#4ADE80';
+      box.innerHTML = `当前已是最新版本 (${escapeHtml(data.current_version)})，无需更新。`;
+    }
+  } catch (err) {
+    box.style.color = 'var(--red)';
+    box.innerHTML = `检查更新请求异常: ${escapeHtml(err.message)}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '检查软件更新';
   }
 }
 
