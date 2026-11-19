@@ -1,14 +1,14 @@
 @echo off
-chcp 65001 >nul
-title 停止 Aether Quant Studio
+setlocal
+cd /d "%~dp0"
 
 echo ======================================================
-echo   正在安全停止 Aether Quant Studio 后台进程...
+echo   Aether Quant Studio - Stopping All Services...
 echo ======================================================
+echo.
 
-powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*server_supervisor.py*' -or $_.CommandLine -like '*tray_app.py*' -or ($_.CommandLine -like '*app.py*' -and $_.Name -match 'python') } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }"
+python scripts\stop_all.py
 
 echo.
-echo [OK] 核心交易引擎、系统托盘及守护进程已全部安全停止！
-echo.
-pause
+ping 127.0.0.1 -n 2 >nul
+exit /b 0

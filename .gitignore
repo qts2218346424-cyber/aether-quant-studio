@@ -47,6 +47,8 @@ __pycache__/
 .ruff_cache/
 dist/
 build/
+*.exe
+*.spec
 *.egg-info/
 .venv/
 venv/

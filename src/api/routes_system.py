@@ -9,6 +9,7 @@ import aiohttp
 from fastapi import APIRouter
 
 from ai_committee import AICommittee
+from binance_client import BinanceFuturesClient
 from config import load_config, save_config
 from openai_image_client import openai_image_client
 from risk_manager import RiskManager
@@ -22,7 +23,18 @@ router = APIRouter(tags=["system"])
 @router.get("/api/config")
 async def get_config():
     cfg = load_config()
-    cfg["api_key"] = cfg["api_key"][:8] + "***" if len(cfg.get("api_key", "")) > 8 else "***"
+    raw_key = str(cfg.get("api_key", "") or "").strip()
+    raw_secret = str(cfg.get("api_secret", "") or "").strip()
+    is_placeholder = (
+        not raw_key
+        or not raw_secret
+        or "YOUR_" in raw_key.upper()
+        or "YOUR_" in raw_secret.upper()
+        or "***" in raw_key
+        or "***" in raw_secret
+    )
+    cfg["binance_api_configured"] = not is_placeholder
+    cfg["api_key"] = raw_key[:8] + "***" if len(raw_key) > 8 and not is_placeholder else "***"
     cfg["api_secret"] = "***"
     for provider in cfg.get("ai_committee", {}).get("providers", []):
         provider["api_key_configured"] = bool(
@@ -88,9 +100,39 @@ async def update_config(data: dict):
         else:
             cfg[k] = v
 
+    # 如果提交了真实的 api_key / api_secret / base_url，则同步更新并热加载到 client
+    binance_creds_updated = False
+    account_node = cfg.setdefault("account", {})
+    for cred_key in ("api_key", "api_secret"):
+        val = str(data.get(cred_key, "") or "").strip()
+        if val and "***" not in val:
+            cfg[cred_key] = val
+            account_node[cred_key] = val
+            binance_creds_updated = True
+
+    if "base_url" in data and str(data["base_url"] or "").strip():
+        base_url_val = str(data["base_url"]).strip().rstrip("/")
+        cfg["base_url"] = base_url_val
+        account_node["base_url"] = base_url_val
+        if "testnet" in base_url_val:
+            cfg["ws_url"] = "wss://stream.binancefuture.com"
+        else:
+            cfg["ws_url"] = "wss://fstream.binance.com"
+        account_node["ws_url"] = cfg["ws_url"]
+        binance_creds_updated = True
+
     save_config(cfg)
     t.cfg = cfg
     openai_image_client.config_or_path = cfg
+
+    if binance_creds_updated and hasattr(t, "client") and t.client:
+        t.client.cfg = cfg
+        t.client.api_key = cfg.get("api_key", "")
+        t.client.api_secret = cfg.get("api_secret", "")
+        t.client.base_url = cfg.get("base_url", "https://fapi.binance.com")
+        t.client.ws_url = cfg.get("ws_url", "wss://fstream.binance.com")
+        if t.client._session and not t.client._session.closed:
+            asyncio.create_task(t.client._session.close())
 
     if "ai_committee" in data or "proxy" in data:
         ai_cfg = dict(cfg.get("ai_committee", {}) or {})
@@ -160,3 +202,45 @@ async def test_proxy_endpoint(data: dict):
             }
     except Exception as e:
         return {"ok": False, "error": f"连接测试失败: {str(e)}"}
+
+
+@router.post("/api/test_binance_api")
+async def test_binance_api_endpoint(data: dict):
+    """测试币安期货 API Key / Secret 鉴权与余额读取权限"""
+    cfg = load_config()
+    raw_key = str(data.get("api_key", "") or "").strip()
+    raw_secret = str(data.get("api_secret", "") or "").strip()
+    base_url = str(data.get("base_url") or cfg.get("base_url") or "https://fapi.binance.com").strip().rstrip("/")
+    proxy_val = data.get("proxy")
+    proxy = (str(proxy_val).strip() or None) if proxy_val is not None else (cfg.get("proxy") or None)
+
+    api_key = raw_key if (raw_key and "***" not in raw_key) else str(cfg.get("api_key", "") or "").strip()
+    api_secret = raw_secret if (raw_secret and "***" not in raw_secret) else str(cfg.get("api_secret", "") or "").strip()
+
+    if not api_key or not api_secret or "YOUR_" in api_key.upper() or "YOUR_" in api_secret.upper():
+        return {"ok": False, "error": "请先填入有效的币安 API Key 与 Secret Key"}
+
+    test_cfg = {
+        **cfg,
+        "api_key": api_key,
+        "api_secret": api_secret,
+        "base_url": base_url,
+        "proxy": proxy,
+    }
+    client = BinanceFuturesClient(test_cfg)
+    try:
+        await client.sync_time()
+        account = await client.get_account()
+        total_wallet = float(account.get("totalWalletBalance", 0) or 0)
+        avail_balance = float(account.get("availableBalance", 0) or 0)
+        return {
+            "ok": True,
+            "total_wallet_balance": total_wallet,
+            "available_balance": avail_balance,
+            "message": f"鉴权成功！账户总权益: {total_wallet:.2f} USDT (可用: {avail_balance:.2f} USDT)",
+        }
+    except Exception as e:
+        return {"ok": False, "error": f"API 鉴权失败: {str(e)}"}
+    finally:
+        if client._session and not client._session.closed:
+            await client._session.close()

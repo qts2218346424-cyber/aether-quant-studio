@@ -2518,6 +2518,47 @@ async function openSettings() {
           </div>
         </div>
         <div class="settings-body">
+          <!-- 0.0 币安合约 API 密钥接入 (Binance API) -->
+          <div class="settings-section" id="binance-api-section" style="background:rgba(240,185,11,0.06);border:1px solid rgba(240,185,11,0.38);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+            <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <span style="color:#F0B90B;font-weight:700;font-size:13px;">🔑 币安合约 API 密钥配置 (Binance Futures API)</span>
+              <span style="font-size:11px;font-weight:600;color:${settingsConfig.binance_api_configured ? '#4ADE80' : '#FBBF24'};">
+                ${settingsConfig.binance_api_configured ? `🟢 已接入 (${escapeHtml(settingsConfig.api_key || '')})` : '🟡 未配置真实密钥 (填入后即时生效)'}
+              </span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div class="settings-field">
+                <label>API Key (公钥)</label>
+                <div style="display:flex;gap:4px;">
+                  <input id="set-binance-key" type="password" placeholder="${settingsConfig.binance_api_configured ? `已保存 (${escapeHtml(settingsConfig.api_key || '')})，留空不变` : '粘贴您的 Binance API Key'}" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-0);">
+                  <button type="button" onclick="toggleBinanceInputType('set-binance-key')" title="显示/隐藏" style="padding:0 9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text-1);cursor:pointer;">👁</button>
+                </div>
+              </div>
+              <div class="settings-field">
+                <label>Secret Key (私钥)</label>
+                <div style="display:flex;gap:4px;">
+                  <input id="set-binance-secret" type="password" placeholder="${settingsConfig.binance_api_configured ? '已安全加密存储，留空不变' : '粘贴您的 Binance Secret Key'}" style="flex:1;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--text-0);">
+                  <button type="button" onclick="toggleBinanceInputType('set-binance-secret')" title="显示/隐藏" style="padding:0 9px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:6px;color:var(--text-1);cursor:pointer;">👁</button>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;">
+                <span style="color:var(--text-2);">接入节点:</span>
+                <select id="set-binance-env" style="background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text-0);font-size:12px;">
+                  <option value="https://fapi.binance.com" ${(settingsConfig.base_url || '').includes('testnet') ? '' : 'selected'}>正式实盘 (fapi.binance.com)</option>
+                  <option value="https://testnet.binancefuture.com" ${(settingsConfig.base_url || '').includes('testnet') ? 'selected' : ''}>模拟测试网 (testnet.binancefuture.com)</option>
+                </select>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span id="binance-api-test-status" style="font-size:11px;font-weight:600;"></span>
+                <button type="button" id="btn-test-binance-api" onclick="testBinanceApiConnection()" style="background:linear-gradient(90deg,#F0B90B,#D97706);color:#0F172A;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;">
+                  ⚡ 测试 API 连通性与账户权限
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- 0. 网络代理与端口设置 (Proxy) -->
           <div class="settings-section" style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:12px 14px;margin-bottom:14px;">
             <div class="settings-section-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -2834,6 +2875,10 @@ async function saveSettings() {
     if (imgUrl) imageGenPayload.base_url = imgUrl;
     if (imgKey && imgKey !== '***') imageGenPayload.api_key = imgKey;
 
+    const binanceKey = (document.getElementById('set-binance-key')?.value || '').trim();
+    const binanceSecret = (document.getElementById('set-binance-secret')?.value || '').trim();
+    const binanceEnv = (document.getElementById('set-binance-env')?.value || '').trim();
+
     const payload = {
       proxy: (document.getElementById('set-proxy')?.value || '').trim(),
       symbols: [...new Set(symbols)],
@@ -2852,6 +2897,9 @@ async function saveSettings() {
       ai_committee: {...(config.ai_committee || {}), enabled: isAiCommitteeEnabled, providers, image_generation: imageGenPayload},
       typesafe: typesafePayload,
     };
+    if (binanceKey && !binanceKey.includes('***')) payload.api_key = binanceKey;
+    if (binanceSecret && !binanceSecret.includes('***')) payload.api_secret = binanceSecret;
+    if (binanceEnv) payload.base_url = binanceEnv;
     const response = await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
     const result = await response.json();
     if (!response.ok || !result.ok) throw new Error(result.error || `HTTP ${response.status}`);
@@ -2862,6 +2910,63 @@ async function saveSettings() {
      status.textContent = tr('saveFailed') + error.message;
     status.style.color = 'var(--red)';
     button.disabled = false;
+  }
+}
+
+async function openBinanceApiSettings() {
+  await openSettings();
+  setTimeout(() => {
+    const el = document.getElementById('set-binance-key');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+    }
+  }, 80);
+}
+
+function toggleBinanceInputType(id) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function testBinanceApiConnection() {
+  const keyInput = document.getElementById('set-binance-key');
+  const secretInput = document.getElementById('set-binance-secret');
+  const envSelect = document.getElementById('set-binance-env');
+  const proxyInput = document.getElementById('set-proxy');
+  const status = document.getElementById('binance-api-test-status');
+  const btn = document.getElementById('btn-test-binance-api');
+  if (!status || !btn) return;
+
+  btn.disabled = true;
+  status.style.color = 'var(--text-2)';
+  status.textContent = '正在验证签名与账户权限...';
+
+  try {
+    const res = await fetch('/api/test_binance_api', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        api_key: (keyInput?.value || '').trim(),
+        api_secret: (secretInput?.value || '').trim(),
+        base_url: (envSelect?.value || '').trim(),
+        proxy: (proxyInput?.value || '').trim()
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--green)';
+      status.textContent = `✅ ${data.message}`;
+    } else {
+      status.style.color = 'var(--red)';
+      status.textContent = `❌ ${data.error || '鉴权失败'}`;
+    }
+  } catch (err) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ 请求异常: ' + err.message;
+  } finally {
+    btn.disabled = false;
   }
 }
 
