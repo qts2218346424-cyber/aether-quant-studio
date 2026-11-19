@@ -315,7 +315,7 @@ async def check_update_endpoint():
                         "latest_version": latest_tag,
                         "has_update": has_update,
                         "release_url": final_url,
-                        "download_url": f"https://github.com/{GITHUB_REPO}/releases/download/{latest_tag}/%E8%8B%8D%E7%A9%B9%E9%87%8F%E6%9E%A2.exe",
+                        "download_url": f"https://github.com/{GITHUB_REPO}/releases/download/{latest_tag}/AetherQuantStudio-{latest_tag}.exe",
                         "release_notes": "",
                     }
             return {
